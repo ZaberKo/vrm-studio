@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRM Teacher Studio Pro v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        :root {
+            --bg-color: #0a0a0a;
+            --panel-color: #161616;
+            --border-color: #262626;
+            --accent-color: #3b82f6;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: #e5e5e5; overflow: hidden; margin: 0; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        canvas { display: block; outline: none; }
+        .panel-glass { background: rgba(22, 22, 22, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-color); }
+        .tab-active { border-bottom: 2px solid var(--accent-color); color: var(--accent-color); }
+        .tree-node:hover { background: rgba(255,255,255,0.05); }
+        .tree-node.selected { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .custom-scroll { scrollbar-width: thin; scrollbar-color: #333 transparent; }
+        .custom-listbox option { padding: 4px 6px; border-radius: 4px; }
+        .custom-listbox option:checked { background-color: #3b82f6 !important; color: white; }
+        #stats-container { position: absolute; top: 1rem; left: 1rem; z-index: 50; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="h-12 border-b border-[var(--border-color)] flex items-center justify-between px-4 bg-[var(--panel-color)] z-50">
+        <div class="flex items-center gap-2">
+            <i data-lucide="cpu" class="w-5 h-5 text-blue-500"></i>
+            <span class="font-bold tracking-tight text-sm">VRM TEACHER <span class="text-blue-500">PRO STUDIO</span></span>
+        </div>
+        <div class="flex items-center gap-4 text-xs">
+            <div id="model-status" class="flex items-center gap-2 text-zinc-400">
+                <div class="w-2 h-2 rounded-full bg-red-500" id="status-dot"></div>
+                <span id="status-text" class="font-bold">Waiting for model</span>
+            </div>
+            <div class="flex gap-2">
+                <button id="import-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors shadow shadow-blue-500/20">
+                    <i data-lucide="upload" class="w-3 h-3"></i> 导入/Import
+                </button>
+                <div class="w-px h-5 bg-zinc-700 mx-1 self-center"></div>
+                <button id="export-json-btn" class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors border border-white/5">
+                    <i data-lucide="download" class="w-3 h-3"></i> 导出/Export
+                </button>
+                <button id="screenshot-btn" class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors border border-white/5">
+                    <i data-lucide="camera" class="w-3 h-3 text-purple-400"></i> 截图/Capture
+                </button>
+            </div>
+            <input type="file" id="file-input" class="hidden" accept=".vrm,.vrma,.glb,.gltf">
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden relative">
+        <!-- Left Panel -->
+        <aside class="w-[20%] xl:w-[15%] min-w-[280px] max-w-[360px] shrink-0 border-r border-[var(--border-color)] bg-[var(--panel-color)] flex flex-col z-20">
+            <div class="flex border-b border-[var(--border-color)]" id="left-tabs">
+                <button data-tab="assets" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-wider tab-active transition-colors">Assets</button>
+                <button data-tab="hierarchy" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Tree</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scroll" id="left-content">
+                <div id="tab-assets" class="space-y-6">
+                    <section>
+                        <h3 class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3 flex gap-2 items-center"><i data-lucide="info" class="w-3 h-3"></i> 元数据与许可</h3>
+                        <div id="meta-container" class="space-y-2 text-[11px] text-zinc-400">等待模型加载...</div>
+                    </section>
+                </div>
+                <div id="tab-hierarchy" class="hidden space-y-2 text-[11px]">
+                    <div id="hierarchy-tree" class="font-mono text-zinc-300"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Viewport -->
+        <div id="viewport-container" class="flex-1 min-w-[500px] bg-[#0f0f0f] flex flex-col relative overflow-hidden">
+            <!-- 3D Canvas Area (Flex Grow) -->
+            <div class="flex-1 relative" id="canvas-container">
+            <div id="drop-zone" class="absolute inset-0 z-[100] bg-blue-500/20 border-[3px] border-blue-500 border-dashed m-4 rounded-[30px] hidden flex-col items-center justify-center pointer-events-none transition-all backdrop-blur-sm shadow-[0_0_50px_rgba(59,130,246,0.2)]">
+                <i data-lucide="upload-cloud" class="w-16 h-16 text-blue-400 mb-4 animate-bounce"></i>
+                <span class="text-xl font-bold text-white tracking-widest shadow-black drop-shadow-lg">释放以加载文件 (.vrm / .vrma)</span>
+            </div>
+            
+            <div id="stats-container" class="absolute z-30 flex flex-col gap-2 w-[150px] h-fit opacity-75 hover:opacity-100 transition-opacity bg-[#161616]/60 backdrop-blur-md p-3 rounded-lg shadow-lg shadow-black/50 border border-white/10 cursor-move" style="left: 20px; top: calc(100% - 200px);">
+                <div id="stats-drag-handle" class="flex justify-between items-end border-b border-white/5 pb-2 mb-1">
+                    <span class="text-[10px] text-zinc-500 font-bold tracking-widest uppercase flex items-center gap-1"><i data-lucide="grip-horizontal" class="w-3 h-3"></i> FPS</span>
+                    <span id="stat-fps" class="text-green-400 font-mono font-bold text-xl drop-shadow-[0_0_5px_rgba(74,222,128,0.3)] leading-none pointer-events-none">0</span>
+                </div>
+                    
+                    <!-- Line Chart Canvas -->
+                    <canvas id="fps-chart" class="w-full h-10 border border-white/5 bg-[#0a0a0a]/50 rounded mb-1"></canvas>
+                    
+                
+                <div class="flex flex-col gap-1 pointer-events-none">
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold mt-1"><span class="text-zinc-500 uppercase tracking-widest">Triangles</span><span id="stat-tris" class="text-blue-400">0</span></div>
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-zinc-500 uppercase tracking-widest">Draw Calls</span><span id="stat-calls" class="text-blue-400">0</span></div>
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-zinc-500 uppercase tracking-widest">Geometries</span><span id="stat-geom" class="text-blue-400">0</span></div>
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-zinc-500 uppercase tracking-widest">Textures</span><span id="stat-tex" class="text-blue-400">0</span></div>
+                </div>
+            </div>
+            
+            <!-- Floating Viewport Tools -->
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 panel-glass px-5 py-2.5 rounded-full flex items-center gap-5 z-50 shadow-2xl transition-all hover:scale-105 duration-200">
+                <button data-cam="front" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="正视图 (1)"><i data-lucide="layout-template"></i></button>
+                <button data-cam="side" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="侧视图 (2)"><i data-lucide="columns-2"></i></button>
+                <button data-cam="face" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="面部特写 (3)"><i data-lucide="user-circle"></i></button>
+                <button data-cam="top" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="顶视图 (4)"><i data-lucide="align-vertical-space-around"></i></button>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" class="absolute inset-0 bg-[#0a0a0a]/95 backdrop-blur z-[150] flex flex-col items-center justify-center hidden rounded-xl">
+                <i data-lucide="loader-2" class="w-8 h-8 text-blue-500 animate-spin mb-6"></i>
+                <div class="w-64 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div id="loading-bar" class="w-0 h-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all ease-out duration-300"></div>
+                </div>
+                <p id="loading-text" class="mt-4 text-[10px] font-bold tracking-[0.2em] text-blue-400 animate-pulse uppercase">Processing Assets...</p>
+            </div>
+            
+            </div> <!-- End Canvas Area -->
+
+            <!-- Debug Console (Floating) -->
+            <div class="absolute top-0 left-0 w-full h-6 flex flex-col border-b border-[var(--border-color)] bg-[#050505]/80 backdrop-blur z-40 transition-all duration-300 ease-in-out" id="console-panel">
+                <div class="h-6 shrink-0 w-full flex items-center justify-between px-3 bg-zinc-900/50 border-b border-black/50">
+                    <div class="flex items-center gap-2 text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
+                        <i data-lucide="terminal" class="w-3 h-3 text-blue-500"></i> Debug Console
+                    </div>
+                    <button id="console-toggle-btn" class="flex items-center gap-1 text-[9px] text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded cursor-pointer">
+                        <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" id="console-icon"></i> <span>打开面板</span>
+                    </button>
+                </div>
+                <!-- Console Content Area -->
+                <div class="flex-1 p-2 font-mono text-[9px] overflow-y-auto custom-scroll hidden bg-[#050505]/80 backdrop-blur" id="console-logs" style="height: 120px;"></div>
+            </div>
+
+        </div>
+
+        <!-- Right Panel: Editors -->
+        <aside class="w-[25%] xl:w-[20%] min-w-[340px] max-w-[450px] shrink-0 border-l border-[var(--border-color)] bg-[var(--panel-color)] flex flex-col z-20">
+            <div class="flex flex-wrap border-b border-[var(--border-color)]" id="right-tabs">
+                <button data-tab="expressions" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider tab-active transition-colors">表情 / Face</button>
+                <button data-tab="motion" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">动作 / Motion</button>
+                <button data-tab="physics" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">物理 / Physics</button>
+                <button data-tab="env" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">环境 / Env</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 custom-scroll" id="right-content">
+                
+                <!-- Expressions -->
+                <div id="tab-expressions" class="space-y-6">
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="mic" class="w-3 h-3"></i> 实时语音驱动 (Lip-sync)</h3>
+                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 shadow-inner">
+                            <p class="text-[10px] text-zinc-400 mb-3">使用麦克风捕获音素，实时生成 A/I/U/E/O 口型</p>
+                            <button id="mic-toggle" class="w-full py-2 bg-zinc-800 hover:bg-blue-600 border border-white/10 rounded-md text-[11px] font-bold tracking-wider transition-all flex justify-center gap-2 items-center text-zinc-300 hover:text-white hover:border-blue-500">
+                                <i data-lucide="mic" class="w-3 h-3"></i> <span id="mic-label">启用麦克风</span>
+                            </button>
+                            <div id="audio-levels" class="h-1 bg-zinc-800 rounded mt-3 hidden"></div>
+                        </div>
+                    </section>
+                    
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-purple-400 mb-3 flex items-center gap-2"><i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> 视线交互 (LookAt)</h3>
+                        <label class="flex items-center justify-between group cursor-pointer bg-[#111] hover:bg-white/5 transition-colors p-3 border border-white/5 rounded-lg">
+                            <span class="text-[11px] text-zinc-300 group-hover:text-white font-medium tracking-wide">启用鼠标追踪系统</span>
+                            <input type="checkbox" id="lookat-toggle" class="w-4 h-4 accent-purple-500 rounded focus:ring-purple-500/30">
+                        </label>
+                    </section>
+                    
+                    <section id="blendshapes-section">
+                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">形态键调节 (Blendshapes)</h3>
+                        <div id="expression-controls" class="bg-[#111] p-4 rounded-lg border border-white/5 shadow-inner min-h-[100px] flex flex-col justify-center gap-1">
+                            <p class="text-[11px] text-zinc-600 italic text-center">尚未加载包含表情数据的模型</p>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Motion -->
+                <div id="tab-motion" class="hidden space-y-6">
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-orange-400 mb-3 flex items-center gap-2"><i data-lucide="film" class="w-3 h-3"></i> 动作序列播放器 (VRMA)</h3>
+                        <div id="animation-player" class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-4">
+                            <div class="space-y-2 pb-2 border-b border-white/5">
+                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">预设动作预演</label>
+                                <select id="anim-preset-select" class="w-full bg-zinc-800 text-[10px] text-zinc-300 rounded outline-none border border-white/5 flex items-center justify-center p-2 cursor-pointer hover:bg-zinc-700">
+                                    <option value="">-- 选择预设动作 --</option>
+                                    <!-- Dynamic options will be injected here by main.js -->
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span id="anim-name" class="text-[11px] font-bold text-zinc-300 uppercase truncate" title="未加载动画">空闲状态</span>
+                                <span id="anim-time" class="text-[10px] font-mono text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded">00:00.0</span>
+                            </div>
+                            <!-- Time Slider -->
+                            <input type="range" id="anim-progress" min="0" max="100" value="0" class="w-full h-1 bg-zinc-800 rounded accent-orange-500 cursor-pointer">
+                            
+                            <!-- Controls Grid -->
+                            <div class="flex items-center gap-2">
+                                <button id="anim-play" class="flex-1 bg-orange-600/20 text-orange-400 hover:bg-orange-600 hover:text-white flex items-center justify-center py-2.5 rounded-md transition-all border border-orange-500/30 group">
+                                    <i data-lucide="play" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                                </button>
+                                <select id="anim-speed" class="flex-shrink-0 bg-zinc-800 text-[10px] text-zinc-300 rounded-md outline-none border border-white/5 flex items-center justify-center p-2.5 h-full cursor-pointer hover:bg-zinc-700">
+                                    <option value="0.25">0.25x</option>
+                                    <option value="0.5">0.5x</option>
+                                    <option value="1" selected>1.0x</option>
+                                    <option value="1.5">1.5x</option>
+                                    <option value="2">2.0x</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="scan-line" class="w-3 h-3"></i> 动力学控制 (FK/IK) 与姿势预设</h3>
+                        
+                        <div class="space-y-4 mb-4">
+                            <div class="grid grid-cols-2 gap-2" id="pose-preset-container">
+                                <button class="pose-preset bg-blue-600 hover:bg-blue-700 border border-blue-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase col-span-2 shadow-lg shadow-blue-500/20" data-pose="t-pose">标准 T-Pose (Rest)</button>
+                                <!-- Basic dynamic poses will be injected here -->
+                            </div>
+                            
+                            <div class="mt-4 space-y-2 pb-2 border-b border-white/5">
+                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">动作库集合 (高级姿势)</label>
+                                <select id="pose-advanced-select" size="6" class="w-full bg-zinc-800 text-[10px] text-zinc-300 rounded outline-none border border-white/5 p-2 cursor-pointer hover:bg-zinc-700 custom-scroll custom-listbox">
+                                    <option value="" disabled>-- 滚动选择 Desktop Pose Collection --</option>
+                                    <!-- Advanced/Categorized poses injected here -->
+                                </select>
+                            </div>
+                            
+                            <label class="flex items-center justify-between group cursor-pointer bg-[#111] hover:bg-white/5 p-3 rounded-md transition-colors border border-white/5">
+                                <span class="text-[11px] text-zinc-300 group-hover:text-blue-400 font-bold tracking-wide">启用逆向动力学 (IK 手脚拖拽)</span>
+                                <input type="checkbox" id="ik-toggle" class="w-4 h-4 accent-blue-500 rounded focus:ring-blue-500/30">
+                            </label>
+                        </div>
+
+                        <!-- FK Editor -->
+                        <div id="bone-fk-editor" class="bg-blue-500/5 p-4 rounded-lg border border-blue-500/20 shadow-inner hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <p class="text-[9px] text-blue-400 uppercase tracking-widest font-bold">调整骨骼极角</p>
+                                <span id="sel-bone-name" class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-mono border border-blue-500/30">Select Bone</span>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="space-y-1"><div class="flex justify-between text-[9px] font-mono text-red-500 font-bold"><span>Rot X</span><span id="fk-x-val" class="bg-[#0a0a0a] px-1 rounded text-red-400">0.0</span></div><input type="range" id="fk-x" min="-180" max="180" value="0" class="w-full h-1.5 bg-zinc-900 rounded-full accent-red-600 cursor-pointer"></div>
+                                <div class="space-y-1"><div class="flex justify-between text-[9px] font-mono text-green-500 font-bold"><span>Rot Y</span><span id="fk-y-val" class="bg-[#0a0a0a] px-1 rounded text-green-400">0.0</span></div><input type="range" id="fk-y" min="-180" max="180" value="0" class="w-full h-1.5 bg-zinc-900 rounded-full accent-green-600 cursor-pointer"></div>
+                                <div class="space-y-1"><div class="flex justify-between text-[9px] font-mono text-blue-500 font-bold"><span>Rot Z</span><span id="fk-z-val" class="bg-[#0a0a0a] px-1 rounded text-blue-400">0.0</span></div><input type="range" id="fk-z" min="-180" max="180" value="0" class="w-full h-1.5 bg-zinc-900 rounded-full accent-blue-600 cursor-pointer"></div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Physics -->
+                <div id="tab-physics" class="hidden space-y-6">
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-green-400 mb-3 flex items-center gap-2"><i data-lucide="wind" class="w-3 h-3"></i> 弹性与流体力学模拟</h3>
+                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-5">
+                            
+                            <label class="flex items-center justify-between text-[11px] group cursor-pointer border-b border-white/5 pb-4">
+                                <span class="group-hover:text-green-400 text-zinc-300 font-medium tracking-wide transition-colors">开启碰撞体/骨骼透视</span>
+                                <input type="checkbox" id="sb-vis-toggle" class="w-4 h-4 accent-green-500 rounded focus:ring-green-500/30">
+                            </label>
+
+                            <div class="space-y-5 pt-1">
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>重力乘数 (Gravity Multiplier)</span><span id="val-grav" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
+                                    <input type="range" id="phys-grav" min="0" max="5" step="0.1" value="1.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>阻尼系数 (Drag Force)</span><span id="val-drag" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
+                                    <input type="range" id="phys-drag" min="0.1" max="3" step="0.1" value="1.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
+                                </div>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>环境风场 (Wind Field X)</span><span id="val-wind" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">0.00</span></div>
+                                    <input type="range" id="phys-wind" min="-1" max="1" step="0.05" value="0.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
+                                </div>
+                            </div>
+                            
+                            <div class="bg-zinc-900 border border-zinc-800 rounded p-2 mt-4">
+                                <p class="text-[9px] text-zinc-500 leading-relaxed"><i data-lucide="info" class="w-3 h-3 inline text-zinc-600"></i> 说明：此面板实时倍乘覆盖 VRM 的内置 SpringBone 参数层，可用于快速调试裙摆、头发对于力场变化的鲁棒程度。</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Environment -->
+                <div id="tab-env" class="hidden space-y-6">
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">场景诊断辅助</h3>
+                        <div class="bg-[#111] p-2 rounded-lg border border-white/5">
+                            <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
+                                <span class="text-[11px] text-zinc-300">网格地板参考 (Grid)</span>
+                                <input type="checkbox" checked id="grid-toggle" class="w-4 h-4 accent-blue-500 rounded">
+                            </label>
+                            <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
+                                <span class="text-[11px] text-zinc-300">世界坐标原点 (Axes)</span>
+                                <input type="checkbox" id="axes-toggle" class="w-4 h-4 accent-blue-500 rounded">
+                            </label>
+                            <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
+                                <span class="text-[11px] text-zinc-300">引擎原生骨骼透视 (Skeleton)</span>
+                                <input type="checkbox" id="skeleton-toggle" class="w-4 h-4 accent-orange-500 rounded">
+                            </label>
+                        </div>
+                    </section>
+                    
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-yellow-500 mb-3 flex items-center gap-2"><i data-lucide="sun" class="w-3 h-3"></i> 照明工作室</h3>
+                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-5">
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>全景环境光 (Ambient)</span><span id="env-amb-v" class="font-mono text-yellow-500">1.0</span></div>
+                                <input type="range" id="env-amb" min="0" max="3" step="0.05" value="1.0" class="w-full h-1 bg-zinc-800 rounded accent-yellow-500 cursor-pointer">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>主平行光照 (Directional)</span><span id="env-dir-v" class="font-mono text-yellow-500">1.5</span></div>
+                                <input type="range" id="env-dir" min="0" max="5" step="0.05" value="1.5" class="w-full h-1 bg-zinc-800 rounded accent-yellow-500 cursor-pointer">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="text-[10px] uppercase font-bold text-pink-400 mb-3 flex items-center gap-2"><i data-lucide="image" class="w-3 h-3"></i> 显存管线 & 背景</h3>
+                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-4">
+                            <div>
+                                <p class="text-[10px] text-zinc-500 mb-2 font-bold">画布清空颜色 (背景色)</p>
+                                <div class="flex gap-2">
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0a0a0a] hover:scale-110 transition-transform flex items-center justify-center text-[10px] text-zinc-400 bg-[radial-gradient(circle_at_center,_transparent_40%,_#333_100%)]" data-bg="transparent" title="Alpha通道透明"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#808080] hover:scale-110 transition-transform shadow shadow-zinc-500/50" data-bg="#808080" title="灰"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#00ff22] hover:scale-110 transition-transform shadow shadow-green-500/50" data-bg="#00ff22" title="绿幕 (纯度100%)"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0000ff] hover:scale-110 transition-transform shadow shadow-blue-500/50" data-bg="#0000ff" title="蓝幕 (纯度100%)"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#eeeeee] hover:scale-110 transition-transform shadow shadow-white" data-bg="#eeeeee" title="白"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Removed old absolute console -->
+    </main>
+
+    <script src="./js/main.js" type="module"></script>
+</body>
+</html>

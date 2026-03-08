@@ -2,6 +2,7 @@
   "name": "vrm_studio",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,6 +15,10 @@
   "license": "ISC",
   "packageManager": "pnpm@10.30.2",
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
     "vite": "^5.2.0"
   },
   "dependencies": {

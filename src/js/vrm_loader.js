@@ -24,7 +24,6 @@ export async function loadVRM(url, scene, globals) {
   if (globals.currentVRM) {
     scene.remove(globals.currentVRM.scene);
     VRMUtils.deepDispose(globals.currentVRM.scene);
-    globals.transformControls.detach();
     if (globals.mixer) {
       globals.mixer.stopAllAction();
       globals.mixer = null;

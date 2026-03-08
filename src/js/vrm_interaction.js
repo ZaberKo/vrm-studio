@@ -125,26 +125,6 @@ export function setupUIHandlers(globals) {
       globals.log(`Camera switched to: ${mode}`, "gray");
     };
   });
-
-  const gizmoT = document.getElementById("gizmo-t");
-  if (gizmoT)
-    gizmoT.onclick = () => {
-      globals.transformControls.setMode("translate");
-      globals.log("Gizmo: Translate", "yellow");
-    };
-  const gizmoR = document.getElementById("gizmo-r");
-  if (gizmoR)
-    gizmoR.onclick = () => {
-      globals.transformControls.setMode("rotate");
-      globals.log("Gizmo: Rotate", "yellow");
-    };
-  const gizmoS = document.getElementById("gizmo-s");
-  if (gizmoS)
-    gizmoS.onclick = () => {
-      globals.transformControls.setMode("scale");
-      globals.log("Gizmo: Scale", "yellow");
-    };
-
   // Env toggles
   document.getElementById("grid-toggle").onchange = (e) => {
     if (globals.gridHelper) globals.gridHelper.visible = e.target.checked;
@@ -191,23 +171,6 @@ export function setupUIHandlers(globals) {
     link.click();
     globals.log("Screenshot generated.", "green");
   };
-
-  // FK Controls update object rotation
-  ["x", "y", "z"].forEach((axis) => {
-    document.getElementById(`fk-${axis}`).oninput = (e) => {
-      if (
-        globals.transformControls.object &&
-        globals.transformControls.object.isBone
-      ) {
-        const v = (parseFloat(e.target.value) * Math.PI) / 180;
-        globals.transformControls.object.rotation[axis] = v;
-        document.getElementById(`fk-${axis}-val`).innerText = (
-          (v * 180) /
-          Math.PI
-        ).toFixed(1);
-      }
-    };
-  });
 
   const resetBtn = document.getElementById("reset-pose");
   if (resetBtn)
@@ -317,50 +280,6 @@ export function setupUIHandlers(globals) {
     if (globals.mixer) globals.mixer.timeScale = parseFloat(e.target.value);
   };
 
-  // Export Pose Configuration
-  document.getElementById("export-json-btn").onclick = () => {
-    if (!globals.currentVRM) {
-      globals.log("No VRM loaded to export pose from.", "red");
-      return;
-    }
-
-    const humanoid = globals.currentVRM.humanoid;
-    const poseData = {
-      name: `pose_${Date.now()}`,
-      vrmVersion: "0",
-      data: {},
-    };
-
-    // Export only normalized bone nodes that have non-zero rotation relative to rest pose
-    // For standard VRM 0.0 format, all bones are dumped.
-    for (const boneName in humanoid.humanBones) {
-      const boneArray = humanoid.humanBones[boneName];
-      if (boneArray && boneArray.length > 0) {
-        // VRM humanoid bone mapping typically returns an array, usually 1 bone inside
-        const boneNode = boneArray[0].node;
-        if (boneNode) {
-          poseData.data[boneName] = {
-            rotation: [
-              boneNode.quaternion.x,
-              boneNode.quaternion.y,
-              boneNode.quaternion.z,
-              boneNode.quaternion.w,
-            ],
-          };
-        }
-      }
-    }
-
-    const blob = new Blob([JSON.stringify(poseData)], {
-      type: "application/json",
-    });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `vrm_pose_${Date.now()}.json`;
-    link.click();
-    globals.log("Current pose exported to JSON.", "green");
-  };
-
   // LookAt setup
   document.getElementById("lookat-toggle").onchange = (e) => {
     globals.isLookAtEnabled = e.target.checked;
@@ -432,79 +351,12 @@ export function setupUIHandlers(globals) {
     }
   };
 
-  const poseContainer = document.getElementById("pose-preset-container");
-  const advancedPoseSelect = document.getElementById("pose-advanced-select");
-
-  if (poseContainer) {
-    const poseFiles = import.meta.glob("../../public/pose/**/*.json", {
-      query: "?url",
-      import: "default",
-      eager: true,
-    });
-
-    // For grouping advanced poses
-    const advancedGroups = {
-      female: [],
-      male: [],
-    };
-
-    for (const path in poseFiles) {
-      const url = poseFiles[path];
-      const filename = path.split("/").pop().replace(".json", "");
-
-      // Check if it's in the subfolder Free_VRM
-      if (path.includes("Free_VRM")) {
-        if (path.includes("female") || path.includes("女性向け")) {
-          advancedGroups.female.push({ name: filename, url });
-        } else if (path.includes("male") || path.includes("男性向け")) {
-          advancedGroups.male.push({ name: filename, url });
-        }
-      } else {
-        // Basic top-level poses go to buttons
-        const btn = document.createElement("button");
-        btn.className =
-          "pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase";
-        btn.dataset.pose = url;
-        btn.textContent = filename;
-        poseContainer.appendChild(btn);
-      }
-    }
-
-    // Populate advanced select box
-    if (advancedPoseSelect) {
-      const createOptGroup = (label, items) => {
-        if (items.length === 0) return;
-        const group = document.createElement("optgroup");
-        group.label = label;
-        items
-          .sort((a, b) =>
-            a.name.localeCompare(b.name, undefined, { numeric: true }),
-          )
-          .forEach((item) => {
-            const opt = document.createElement("option");
-            opt.value = item.url;
-            opt.textContent = item.name;
-            group.appendChild(opt);
-          });
-        advancedPoseSelect.appendChild(group);
-      };
-
-      createOptGroup("Female / 女性", advancedGroups.female);
-      createOptGroup("Male / 男性", advancedGroups.male);
-
-      advancedPoseSelect.onchange = (e) => {
-        const url = e.target.value;
-        if (url) {
-          loadPose(url);
-          // Optional reset select back to default after trigger if desired,
-          // but leaving it shows current selected pose
-        }
-      };
-    }
-  }
-
-  document.querySelectorAll(".pose-preset").forEach((btn) => {
-    btn.onclick = () => {
+  // Pre-bind all static and dynamic pose preset buttons
+  document
+    .getElementById("pose-preset-container")
+    .addEventListener("click", (e) => {
+      const btn = e.target.closest(".pose-preset");
+      if (!btn) return;
       const posePath = btn.dataset.pose;
       if (posePath === "t-pose" || !posePath) {
         if (globals.currentVRM) {
@@ -514,12 +366,41 @@ export function setupUIHandlers(globals) {
       } else {
         loadPose(posePath);
       }
-    };
-  });
+    });
 
-  setupIK(globals);
-  setupPhysicsHandlers(globals);
-}
+  // Custom Pose Upload Logic
+  const btnImportPose = document.getElementById("btn-import-pose");
+  const inputCustomPose = document.getElementById("input-custom-pose");
+
+  if (btnImportPose && inputCustomPose) {
+    btnImportPose.onclick = () => inputCustomPose.click();
+    inputCustomPose.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const jsonContent = evt.target.result;
+          // Validate JSON format roughly
+          JSON.parse(jsonContent);
+
+          // Create Blob URL so loadPose can fetch it normally like other urls
+          const blob = new Blob([jsonContent], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          loadPose(url);
+
+          // Clear input so same file can be selected again if needed
+          inputCustomPose.value = "";
+        } catch (err) {
+          globals.log("无效的 JSON 文件格式 / Invalid JSON Format", "red");
+          console.error(err);
+        }
+      };
+      reader.readAsText(file);
+    };
+  }
+} // End setupUIHandlers
 
 function setupDraggableStats() {
   const el = document.getElementById("stats-container");
@@ -561,146 +442,6 @@ function setupDraggableStats() {
       el.style.transition = ""; // restore transition
     }
   });
-}
-
-function setupIK(globals) {
-  globals.ikTargets = {};
-  const names = ["leftHand", "rightHand", "leftFoot", "rightFoot"];
-  const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00];
-
-  const ikGroup = new THREE.Group();
-  globals.scene.add(ikGroup);
-
-  names.forEach((name, i) => {
-    const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.08, 16, 16),
-      new THREE.MeshBasicMaterial({
-        color: colors[i],
-        wireframe: true,
-        depthTest: false,
-      }),
-    );
-    mesh.visible = false;
-    mesh.name = "IKTarget_" + name;
-    ikGroup.add(mesh);
-    globals.ikTargets[name] = mesh;
-  });
-
-  const ikToggle = document.getElementById("ik-toggle");
-  if (ikToggle) {
-    ikToggle.onchange = (e) => {
-      globals.isIKEnabled = e.target.checked;
-      Object.values(globals.ikTargets).forEach(
-        (t) => (t.visible = globals.isIKEnabled),
-      );
-      globals.log(`IK Handlers: ${globals.isIKEnabled ? "ON" : "OFF"}`, "blue");
-
-      if (globals.isIKEnabled && globals.currentVRM) {
-        names.forEach((n) => {
-          const bone = globals.currentVRM.humanoid.getNormalizedBoneNode(n);
-          if (bone) bone.getWorldPosition(globals.ikTargets[n].position);
-        });
-      }
-    };
-  }
-
-  // Bind transform controls logic to easily grab targets
-  let ikRaycaster = new THREE.Raycaster();
-  let mouse = new THREE.Vector2();
-  const cEl = globals.renderer.domElement;
-  cEl.addEventListener("dblclick", (e) => {
-    if (!globals.isIKEnabled) return;
-    const rect = cEl.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    ikRaycaster.setFromCamera(mouse, globals.camera);
-    const intersects = ikRaycaster.intersectObjects(
-      Object.values(globals.ikTargets),
-    );
-    if (intersects.length > 0) {
-      globals.transformControls.attach(intersects[0].object);
-      globals.log(`Attached IK Handle: ${intersects[0].object.name}`, "blue");
-    }
-  });
-
-  window.updateIK = function (vrm) {
-    if (!vrm || !globals.isIKEnabled) return;
-
-    const solve2BoneIK = (upperName, lowerName, effectorName, target) => {
-      const upper = vrm.humanoid.getNormalizedBoneNode(upperName);
-      const lower = vrm.humanoid.getNormalizedBoneNode(lowerName);
-      const effector = vrm.humanoid.getNormalizedBoneNode(effectorName);
-      if (!upper || !lower || !effector || !target) return;
-
-      const bones = [lower, upper];
-      for (let iter = 0; iter < 3; iter++) {
-        for (const bone of bones) {
-          upper.updateMatrixWorld(true);
-          const ePos = new THREE.Vector3().setFromMatrixPosition(
-            effector.matrixWorld,
-          );
-          const tPos = new THREE.Vector3().setFromMatrixPosition(
-            target.matrixWorld,
-          );
-          const bPos = new THREE.Vector3().setFromMatrixPosition(
-            bone.matrixWorld,
-          );
-
-          const eDir = ePos.clone().sub(bPos).normalize();
-          const tDir = tPos.clone().sub(bPos).normalize();
-
-          const dot = eDir.dot(tDir);
-          if (dot < 1.0) {
-            const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
-            if (angle > 0.001) {
-              const axis = new THREE.Vector3()
-                .crossVectors(eDir, tDir)
-                .normalize();
-              const qWorld = new THREE.Quaternion().setFromAxisAngle(
-                axis,
-                angle * 0.5,
-              );
-
-              const parentWorldQ = new THREE.Quaternion();
-              if (bone.parent) bone.parent.getWorldQuaternion(parentWorldQ);
-              const qLocal = parentWorldQ
-                .invert()
-                .multiply(qWorld)
-                .multiply(parentWorldQ);
-
-              bone.quaternion.premultiply(qLocal);
-              bone.updateMatrixWorld(true);
-            }
-          }
-        }
-      }
-    };
-
-    solve2BoneIK(
-      "leftUpperArm",
-      "leftLowerArm",
-      "leftHand",
-      globals.ikTargets.leftHand,
-    );
-    solve2BoneIK(
-      "rightUpperArm",
-      "rightLowerArm",
-      "rightHand",
-      globals.ikTargets.rightHand,
-    );
-    solve2BoneIK(
-      "leftUpperLeg",
-      "leftLowerLeg",
-      "leftFoot",
-      globals.ikTargets.leftFoot,
-    );
-    solve2BoneIK(
-      "rightUpperLeg",
-      "rightLowerLeg",
-      "rightFoot",
-      globals.ikTargets.rightFoot,
-    );
-  };
 }
 
 function setupPhysicsHandlers(globals) {

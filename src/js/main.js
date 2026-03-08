@@ -1,7 +1,5 @@
 import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { TransformControls } from "three/addons/controls/TransformControls.js";
-
 import { initAudioLipsync, updateAudioLipsync } from "./vrm_audio.js";
 import { setupUIHandlers } from "./vrm_interaction.js";
 
@@ -11,7 +9,6 @@ const globals = {
   renderer: null,
   composer: null,
   controls: null,
-  transformControls: null,
   currentVRM: null,
   mixer: null,
   currentAction: null,
@@ -141,17 +138,7 @@ const globals = {
           .querySelectorAll(".tree-node")
           .forEach((n) => n.classList.remove("selected"));
         node.classList.add("selected");
-        globals.transformControls.attach(obj);
 
-        // Show FK UI if bone
-        const fkUI = document.getElementById("bone-fk-editor");
-        if (isBone) {
-          fkUI.classList.remove("hidden");
-          document.getElementById("sel-bone-name").innerText = obj.name;
-          window.updateFKSliders();
-        } else {
-          fkUI.classList.add("hidden");
-        }
         globals.log(`Selected Node: ${obj.name}`, "blue");
       };
 
@@ -232,30 +219,6 @@ const globals = {
   },
 };
 
-window.updateFKSliders = function () {
-  if (
-    !globals.transformControls.object ||
-    !globals.transformControls.object.isBone
-  )
-    return;
-  const r = globals.transformControls.object.rotation;
-  document.getElementById("fk-x-val").innerText = (
-    (r.x * 180) /
-    Math.PI
-  ).toFixed(1);
-  document.getElementById("fk-y-val").innerText = (
-    (r.y * 180) /
-    Math.PI
-  ).toFixed(1);
-  document.getElementById("fk-z-val").innerText = (
-    (r.z * 180) /
-    Math.PI
-  ).toFixed(1);
-  document.getElementById("fk-x").value = (r.x * 180) / Math.PI;
-  document.getElementById("fk-y").value = (r.y * 180) / Math.PI;
-  document.getElementById("fk-z").value = (r.z * 180) / Math.PI;
-};
-
 // --- Initialization ---
 
 async function init() {
@@ -291,19 +254,6 @@ async function init() {
   );
   globals.controls.target.set(0, 1.1, 0);
   globals.controls.enableDamping = true;
-
-  globals.transformControls = new TransformControls(
-    globals.camera,
-    globals.renderer.domElement,
-  );
-  globals.transformControls.setMode("rotate");
-  globals.transformControls.size = 0.5;
-  globals.transformControls.addEventListener(
-    "dragging-changed",
-    (event) => (globals.controls.enabled = !event.value),
-  );
-  globals.transformControls.addEventListener("change", window.updateFKSliders);
-  globals.scene.add(globals.transformControls.getHelper());
 
   globals.ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
   globals.scene.add(globals.ambientLight);
@@ -353,10 +303,6 @@ function animate() {
           });
         }
       });
-    }
-
-    if (globals.isIKEnabled && window.updateIK) {
-      window.updateIK(globals.currentVRM);
     }
   }
 

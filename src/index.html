@@ -46,10 +46,6 @@
                 <button id="import-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors shadow shadow-blue-500/20">
                     <i data-lucide="upload" class="w-3 h-3"></i> 导入/Import
                 </button>
-                <div class="w-px h-5 bg-zinc-700 mx-1 self-center"></div>
-                <button id="export-json-btn" class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors border border-white/5">
-                    <i data-lucide="download" class="w-3 h-3"></i> 导出/Export
-                </button>
                 <button id="screenshot-btn" class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors border border-white/5">
                     <i data-lucide="camera" class="w-3 h-3 text-purple-400"></i> 截图/Capture
                 </button>
@@ -222,33 +218,18 @@
                         <div class="space-y-4 mb-4">
                             <div class="grid grid-cols-2 gap-2" id="pose-preset-container">
                                 <button class="pose-preset bg-blue-600 hover:bg-blue-700 border border-blue-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase col-span-2 shadow-lg shadow-blue-500/20" data-pose="t-pose">标准 T-Pose (Rest)</button>
-                                <!-- Basic dynamic poses will be injected here -->
+                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/A-shape.json">A-shape</button>
+                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/Standing.json">Standing</button>
+                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/Double Peace.json">Double Peace</button>
+                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/T-shape.json">T-shape</button>
                             </div>
                             
-                            <div class="mt-4 space-y-2 pb-2 border-b border-white/5">
-                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">动作库集合 (高级姿势)</label>
-                                <select id="pose-advanced-select" size="6" class="w-full bg-zinc-800 text-[10px] text-zinc-300 rounded outline-none border border-white/5 p-2 cursor-pointer hover:bg-zinc-700 custom-scroll custom-listbox">
-                                    <option value="" disabled>-- 滚动选择 Desktop Pose Collection --</option>
-                                    <!-- Advanced/Categorized poses injected here -->
-                                </select>
-                            </div>
-                            
-                            <label class="flex items-center justify-between group cursor-pointer bg-[#111] hover:bg-white/5 p-3 rounded-md transition-colors border border-white/5">
-                                <span class="text-[11px] text-zinc-300 group-hover:text-blue-400 font-bold tracking-wide">启用逆向动力学 (IK 手脚拖拽)</span>
-                                <input type="checkbox" id="ik-toggle" class="w-4 h-4 accent-blue-500 rounded focus:ring-blue-500/30">
-                            </label>
-                        </div>
-
-                        <!-- FK Editor -->
-                        <div id="bone-fk-editor" class="bg-blue-500/5 p-4 rounded-lg border border-blue-500/20 shadow-inner hidden">
-                            <div class="flex items-center justify-between mb-4">
-                                <p class="text-[9px] text-blue-400 uppercase tracking-widest font-bold">调整骨骼极角</p>
-                                <span id="sel-bone-name" class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-mono border border-blue-500/30">Select Bone</span>
-                            </div>
-                            <div class="space-y-4">
-                                <div class="space-y-1"><div class="flex justify-between text-[9px] font-mono text-red-500 font-bold"><span>Rot X</span><span id="fk-x-val" class="bg-[#0a0a0a] px-1 rounded text-red-400">0.0</span></div><input type="range" id="fk-x" min="-180" max="180" value="0" class="w-full h-1.5 bg-zinc-900 rounded-full accent-red-600 cursor-pointer"></div>
-                                <div class="space-y-1"><div class="flex justify-between text-[9px] font-mono text-green-500 font-bold"><span>Rot Y</span><span id="fk-y-val" class="bg-[#0a0a0a] px-1 rounded text-green-400">0.0</span></div><input type="range" id="fk-y" min="-180" max="180" value="0" class="w-full h-1.5 bg-zinc-900 rounded-full accent-green-600 cursor-pointer"></div>
-                                <div class="space-y-1"><div class="flex justify-between text-[9px] font-mono text-blue-500 font-bold"><span>Rot Z</span><span id="fk-z-val" class="bg-[#0a0a0a] px-1 rounded text-blue-400">0.0</span></div><input type="range" id="fk-z" min="-180" max="180" value="0" class="w-full h-1.5 bg-zinc-900 rounded-full accent-blue-600 cursor-pointer"></div>
+                            <div class="mt-4 pt-4 border-t border-white/5 space-y-2">
+                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">导入外部姿势</label>
+                                <button id="btn-import-pose" class="w-full bg-zinc-800 hover:bg-zinc-700 border border-white/10 p-2 rounded-md text-[10px] text-zinc-300 hover:text-white transition-all font-medium flex items-center justify-center gap-2">
+                                    <i data-lucide="upload" class="w-3 h-3"></i> 导入自定义 Pose (.json)
+                                </button>
+                                <input type="file" id="input-custom-pose" class="hidden" accept=".json">
                             </div>
                         </div>
                     </section>

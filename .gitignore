@@ -199,7 +199,5 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/node
-three-vrm-examples/
-vrm-viewer/
-VRM-Assets-Pack-For-Silly-Tavern/
+examples/
 prompt*.md

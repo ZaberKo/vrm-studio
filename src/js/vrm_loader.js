@@ -76,8 +76,16 @@ export async function loadVRM(url, scene, globals) {
       obj.frustumCulled = false;
     });
 
-    // Rotate the model 180 degrees so it faces the camera (+Z axis)
-    vrm.scene.rotation.y = Math.PI;
+    // Rotate the model 180 degrees only if it is VRM 0.0
+    // VRM 1.0 is naturally facing camera (+Z) natively from export in most VRM 1.0 implementations.
+    if (vrm.meta.metaVersion === "0") {
+      vrm.scene.rotation.y = Math.PI;
+    }
+
+    // Connect the persistent LookAt Object3D to the newly loaded VRM
+    if (vrm.lookAt) {
+      vrm.lookAt.target = globals.lookAtTarget;
+    }
 
     scene.add(vrm.scene);
 
@@ -121,7 +129,7 @@ export async function loadVRM(url, scene, globals) {
       .getElementById("status-dot")
       .classList.replace("bg-red-500", "bg-green-500");
     document.getElementById("status-text").innerText =
-      vrm.meta?.name || "已载入";
+      vrm.meta?.name || "Loaded";
 
     globals.updateExpressions(vrm);
     globals.updateMetadata(vrm.meta);

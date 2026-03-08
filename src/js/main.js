@@ -21,9 +21,9 @@ const globals = {
   audioCtx: null,
   analyser: null,
   dataArray: null,
-  isIKEnabled: false,
   isLookAtEnabled: false,
-  lookAtTarget: new THREE.Vector3(),
+  lookAtTarget: new THREE.Object3D(),
+  cameraTarget: new THREE.Vector3(),
   boneMap: {},
   springBoneVisualizerRoots: [],
   isSeeking: false,
@@ -271,6 +271,9 @@ async function init() {
   globals.axesHelper.visible = false;
   globals.scene.add(globals.axesHelper);
 
+  // Add the LookAt target to the scene so it interpolates properly in world space
+  globals.scene.add(globals.lookAtTarget);
+
   // Initializations from modules
   setupUIHandlers(globals);
   initAudioLipsync(globals);
@@ -292,6 +295,27 @@ function animate() {
   const delta = globals.clock.getDelta();
 
   if (globals.currentVRM) {
+    if (globals.lookAtTarget && globals.cameraTarget) {
+      if (globals.isLookAtEnabled) {
+        const elapsedTime = performance.now() / 1000;
+        // Add subtle natural drift noise
+        const noiseX = Math.sin(elapsedTime * 0.5) * 0.2;
+        const noiseY = Math.sin(elapsedTime * 0.7) * 0.1;
+
+        const actualTarget = globals.cameraTarget.clone();
+        actualTarget.x += noiseX;
+        actualTarget.y += noiseY;
+
+        globals.lookAtTarget.position.lerp(actualTarget, 5.0 * delta);
+      } else {
+        // Smoothly return eyes to default forward position when LookAt is OFF
+        globals.lookAtTarget.position.lerp(
+          new THREE.Vector3(0, 1.2, 2.0),
+          5.0 * delta,
+        );
+      }
+    }
+
     globals.currentVRM.update(delta);
     updateAudioLipsync(globals.currentVRM, globals);
     if (globals.autoBlink) globals.autoBlink.update(delta);

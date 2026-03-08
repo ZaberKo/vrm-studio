@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,10 +44,10 @@
             </div>
             <div class="flex gap-2">
                 <button id="import-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors shadow shadow-blue-500/20">
-                    <i data-lucide="upload" class="w-3 h-3"></i> 导入/Import
+                    <i data-lucide="upload" class="w-3 h-3"></i> Import
                 </button>
                 <button id="screenshot-btn" class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors border border-white/5">
-                    <i data-lucide="camera" class="w-3 h-3 text-purple-400"></i> 截图/Capture
+                    <i data-lucide="camera" class="w-3 h-3 text-purple-400"></i> Capture
                 </button>
             </div>
             <input type="file" id="file-input" class="hidden" accept=".vrm,.vrma,.glb,.gltf">
@@ -65,8 +65,8 @@
             <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scroll" id="left-content">
                 <div id="tab-assets" class="space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3 flex gap-2 items-center"><i data-lucide="info" class="w-3 h-3"></i> 元数据与许可</h3>
-                        <div id="meta-container" class="space-y-2 text-[11px] text-zinc-400">等待模型加载...</div>
+                        <h3 class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3 flex gap-2 items-center"><i data-lucide="info" class="w-3 h-3"></i> Metadata & License</h3>
+                        <div id="meta-container" class="space-y-2 text-[11px] text-zinc-400">Waiting for model to load...</div>
                     </section>
                 </div>
                 <div id="tab-hierarchy" class="hidden space-y-2 text-[11px]">
@@ -81,7 +81,7 @@
             <div class="flex-1 relative" id="canvas-container">
             <div id="drop-zone" class="absolute inset-0 z-[100] bg-blue-500/20 border-[3px] border-blue-500 border-dashed m-4 rounded-[30px] hidden flex-col items-center justify-center pointer-events-none transition-all backdrop-blur-sm shadow-[0_0_50px_rgba(59,130,246,0.2)]">
                 <i data-lucide="upload-cloud" class="w-16 h-16 text-blue-400 mb-4 animate-bounce"></i>
-                <span class="text-xl font-bold text-white tracking-widest shadow-black drop-shadow-lg">释放以加载文件 (.vrm / .vrma)</span>
+                <span class="text-xl font-bold text-white tracking-widest shadow-black drop-shadow-lg">Drop to load file (.vrm / .vrma)</span>
             </div>
             
             <div id="stats-container" class="absolute z-30 flex flex-col gap-2 w-[150px] h-fit opacity-75 hover:opacity-100 transition-opacity bg-[#161616]/60 backdrop-blur-md p-3 rounded-lg shadow-lg shadow-black/50 border border-white/10 cursor-move" style="left: 20px; top: calc(100% - 200px);">
@@ -104,10 +104,10 @@
             
             <!-- Floating Viewport Tools -->
             <div class="absolute bottom-6 left-1/2 -translate-x-1/2 panel-glass px-5 py-2.5 rounded-full flex items-center gap-5 z-50 shadow-2xl transition-all hover:scale-105 duration-200">
-                <button data-cam="front" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="正视图 (1)"><i data-lucide="layout-template"></i></button>
-                <button data-cam="side" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="侧视图 (2)"><i data-lucide="columns-2"></i></button>
-                <button data-cam="face" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="面部特写 (3)"><i data-lucide="user-circle"></i></button>
-                <button data-cam="top" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="顶视图 (4)"><i data-lucide="align-vertical-space-around"></i></button>
+                <button data-cam="front" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Front View (1)"><i data-lucide="layout-template"></i></button>
+                <button data-cam="side" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Side View (2)"><i data-lucide="columns-2"></i></button>
+                <button data-cam="face" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Face Close-up (3)"><i data-lucide="user-circle"></i></button>
+                <button data-cam="top" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Top View (4)"><i data-lucide="align-vertical-space-around"></i></button>
             </div>
 
             <!-- Loading Overlay -->
@@ -128,7 +128,7 @@
                         <i data-lucide="terminal" class="w-3 h-3 text-blue-500"></i> Debug Console
                     </div>
                     <button id="console-toggle-btn" class="flex items-center gap-1 text-[9px] text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded cursor-pointer">
-                        <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" id="console-icon"></i> <span>打开面板</span>
+                        <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" id="console-icon"></i> <span>Open Panel</span>
                     </button>
                 </div>
                 <!-- Console Content Area -->
@@ -140,10 +140,10 @@
         <!-- Right Panel: Editors -->
         <aside class="w-[25%] xl:w-[20%] min-w-[340px] max-w-[450px] shrink-0 border-l border-[var(--border-color)] bg-[var(--panel-color)] flex flex-col z-20">
             <div class="flex flex-wrap border-b border-[var(--border-color)]" id="right-tabs">
-                <button data-tab="expressions" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider tab-active transition-colors">表情 / Face</button>
-                <button data-tab="motion" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">动作 / Motion</button>
-                <button data-tab="physics" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">物理 / Physics</button>
-                <button data-tab="env" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">环境 / Env</button>
+                <button data-tab="expressions" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider tab-active transition-colors">Face</button>
+                <button data-tab="motion" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Motion</button>
+                <button data-tab="physics" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Physics</button>
+                <button data-tab="env" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Environment</button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-5 custom-scroll" id="right-content">
@@ -151,28 +151,28 @@
                 <!-- Expressions -->
                 <div id="tab-expressions" class="space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="mic" class="w-3 h-3"></i> 实时语音驱动 (Lip-sync)</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="mic" class="w-3 h-3"></i> Live Lip-sync</h3>
                         <div class="bg-[#111] p-4 rounded-lg border border-white/5 shadow-inner">
-                            <p class="text-[10px] text-zinc-400 mb-3">使用麦克风捕获音素，实时生成 A/I/U/E/O 口型</p>
+                            <p class="text-[10px] text-zinc-400 mb-3">Use microphone to capture phonemes and generate A/I/U/E/O lip sync in real-time.</p>
                             <button id="mic-toggle" class="w-full py-2 bg-zinc-800 hover:bg-blue-600 border border-white/10 rounded-md text-[11px] font-bold tracking-wider transition-all flex justify-center gap-2 items-center text-zinc-300 hover:text-white hover:border-blue-500">
-                                <i data-lucide="mic" class="w-3 h-3"></i> <span id="mic-label">启用麦克风</span>
+                                <i data-lucide="mic" class="w-3 h-3"></i> <span id="mic-label">Enable Microphone</span>
                             </button>
                             <div id="audio-levels" class="h-1 bg-zinc-800 rounded mt-3 hidden"></div>
                         </div>
                     </section>
                     
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-purple-400 mb-3 flex items-center gap-2"><i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> 视线交互 (LookAt)</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-purple-400 mb-3 flex items-center gap-2"><i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> LookAt Interaction</h3>
                         <label class="flex items-center justify-between group cursor-pointer bg-[#111] hover:bg-white/5 transition-colors p-3 border border-white/5 rounded-lg">
-                            <span class="text-[11px] text-zinc-300 group-hover:text-white font-medium tracking-wide">启用鼠标追踪系统</span>
+                            <span class="text-[11px] text-zinc-300 group-hover:text-white font-medium tracking-wide">Enable Mouse Tracking</span>
                             <input type="checkbox" id="lookat-toggle" class="w-4 h-4 accent-purple-500 rounded focus:ring-purple-500/30">
                         </label>
                     </section>
                     
                     <section id="blendshapes-section">
-                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">形态键调节 (Blendshapes)</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">Blendshape Controls</h3>
                         <div id="expression-controls" class="bg-[#111] p-4 rounded-lg border border-white/5 shadow-inner min-h-[100px] flex flex-col justify-center gap-1">
-                            <p class="text-[11px] text-zinc-600 italic text-center">尚未加载包含表情数据的模型</p>
+                            <p class="text-[11px] text-zinc-600 italic text-center">No model with expression data loaded yet.</p>
                         </div>
                     </section>
                 </div>
@@ -180,18 +180,18 @@
                 <!-- Motion -->
                 <div id="tab-motion" class="hidden space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-orange-400 mb-3 flex items-center gap-2"><i data-lucide="film" class="w-3 h-3"></i> 动作序列播放器 (VRMA)</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-orange-400 mb-3 flex items-center gap-2"><i data-lucide="film" class="w-3 h-3"></i> Motion Sequence Player (VRMA)</h3>
                         <div id="animation-player" class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-4">
                             <div class="space-y-2 pb-2 border-b border-white/5">
-                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">预设动作预演</label>
-                                <button id="btn-idle-anim" class="w-full bg-teal-600 hover:bg-teal-700 border border-teal-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase shadow-lg shadow-teal-500/20 mb-2"><i data-lucide="activity" class="w-3 h-3 inline-block"></i> 聊天 Idle (带眨眼+呼吸)</button>
+                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Preset Motion Preview</label>
+                                <button id="btn-idle-anim" class="w-full bg-teal-600 hover:bg-teal-700 border border-teal-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase shadow-lg shadow-teal-500/20 mb-2"><i data-lucide="activity" class="w-3 h-3 inline-block"></i> Chat Idle (with Blink + Breathe)</button>
                                 <select id="anim-preset-select" class="w-full bg-zinc-800 text-[10px] text-zinc-300 rounded outline-none border border-white/5 flex items-center justify-center p-2 cursor-pointer hover:bg-zinc-700">
-                                    <option value="">-- 选择预设动作 --</option>
+                                    <option value="">-- Select Preset Motion --</option>
                                     <!-- Dynamic options will be injected here by main.js -->
                                 </select>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span id="anim-name" class="text-[11px] font-bold text-zinc-300 uppercase truncate" title="未加载动画">空闲状态</span>
+                                <span id="anim-name" class="text-[11px] font-bold text-zinc-300 uppercase truncate" title="No animation loaded">Idle State</span>
                                 <span id="anim-time" class="text-[10px] font-mono text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded">00:00.0</span>
                             </div>
                             <!-- Time Slider -->
@@ -214,11 +214,11 @@
                     </section>
                     
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="scan-line" class="w-3 h-3"></i> 动力学控制 (FK/IK) 与姿势预设</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="scan-line" class="w-3 h-3"></i> Kinematics (FK/IK) & Pose Presets</h3>
                         
                         <div class="space-y-4 mb-4">
                             <div class="grid grid-cols-2 gap-2" id="pose-preset-container">
-                                <button class="pose-preset bg-blue-600 hover:bg-blue-700 border border-blue-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase col-span-2 shadow-lg shadow-blue-500/20" data-pose="t-pose">标准 T-Pose (Rest)</button>
+                                <button class="pose-preset bg-blue-600 hover:bg-blue-700 border border-blue-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase col-span-2 shadow-lg shadow-blue-500/20" data-pose="t-pose">Standard T-Pose (Rest)</button>
                                 <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/A-shape.json">A-shape</button>
                                 <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/Standing.json">Standing</button>
                                 <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/Double Peace.json">Double Peace</button>
@@ -226,9 +226,9 @@
                             </div>
                             
                             <div class="mt-4 pt-4 border-t border-white/5 space-y-2">
-                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">导入外部姿势</label>
+                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Import Custom Pose</label>
                                 <button id="btn-import-pose" class="w-full bg-zinc-800 hover:bg-zinc-700 border border-white/10 p-2 rounded-md text-[10px] text-zinc-300 hover:text-white transition-all font-medium flex items-center justify-center gap-2">
-                                    <i data-lucide="upload" class="w-3 h-3"></i> 导入自定义 Pose (.json)
+                                    <i data-lucide="upload" class="w-3 h-3"></i> Import Custom Pose (.json)
                                 </button>
                                 <input type="file" id="input-custom-pose" class="hidden" accept=".json">
                             </div>
@@ -239,31 +239,31 @@
                 <!-- Physics -->
                 <div id="tab-physics" class="hidden space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-green-400 mb-3 flex items-center gap-2"><i data-lucide="wind" class="w-3 h-3"></i> 弹性与流体力学模拟</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-green-400 mb-3 flex items-center gap-2"><i data-lucide="wind" class="w-3 h-3"></i> Elasticity & Fluid Dynamics</h3>
                         <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-5">
                             
                             <label class="flex items-center justify-between text-[11px] group cursor-pointer border-b border-white/5 pb-4">
-                                <span class="group-hover:text-green-400 text-zinc-300 font-medium tracking-wide transition-colors">开启碰撞体/骨骼透视</span>
+                                <span class="group-hover:text-green-400 text-zinc-300 font-medium tracking-wide transition-colors">Enable Collider/Bone X-Ray</span>
                                 <input type="checkbox" id="sb-vis-toggle" class="w-4 h-4 accent-green-500 rounded focus:ring-green-500/30">
                             </label>
 
                             <div class="space-y-5 pt-1">
                                 <div class="space-y-2">
-                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>重力乘数 (Gravity Multiplier)</span><span id="val-grav" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Gravity Multiplier</span><span id="val-grav" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
                                     <input type="range" id="phys-grav" min="0" max="5" step="0.1" value="1.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
                                 </div>
                                 <div class="space-y-2">
-                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>阻尼系数 (Drag Force)</span><span id="val-drag" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Drag Force</span><span id="val-drag" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
                                     <input type="range" id="phys-drag" min="0.1" max="3" step="0.1" value="1.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
                                 </div>
                                 <div class="space-y-2">
-                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>环境风场 (Wind Field X)</span><span id="val-wind" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">0.00</span></div>
+                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Wind Field X</span><span id="val-wind" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">0.00</span></div>
                                     <input type="range" id="phys-wind" min="-1" max="1" step="0.05" value="0.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
                                 </div>
                             </div>
                             
                             <div class="bg-zinc-900 border border-zinc-800 rounded p-2 mt-4">
-                                <p class="text-[9px] text-zinc-500 leading-relaxed"><i data-lucide="info" class="w-3 h-3 inline text-zinc-600"></i> 说明：此面板实时倍乘覆盖 VRM 的内置 SpringBone 参数层，可用于快速调试裙摆、头发对于力场变化的鲁棒程度。</p>
+                                <p class="text-[9px] text-zinc-500 leading-relaxed"><i data-lucide="info" class="w-3 h-3 inline text-zinc-600"></i> Note: This panel multiplies and overrides the VRM's built-in SpringBone parameters in real-time, allowing quick debugging of how skirts and hair respond to force field changes.</p>
                             </div>
                         </div>
                     </section>
@@ -272,48 +272,48 @@
                 <!-- Environment -->
                 <div id="tab-env" class="hidden space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">场景诊断辅助</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">Scene Diagnostics</h3>
                         <div class="bg-[#111] p-2 rounded-lg border border-white/5">
                             <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
-                                <span class="text-[11px] text-zinc-300">网格地板参考 (Grid)</span>
+                                <span class="text-[11px] text-zinc-300">Grid Floor Reference</span>
                                 <input type="checkbox" checked id="grid-toggle" class="w-4 h-4 accent-blue-500 rounded">
                             </label>
                             <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
-                                <span class="text-[11px] text-zinc-300">世界坐标原点 (Axes)</span>
+                                <span class="text-[11px] text-zinc-300">World Axes Origin</span>
                                 <input type="checkbox" id="axes-toggle" class="w-4 h-4 accent-blue-500 rounded">
                             </label>
                             <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
-                                <span class="text-[11px] text-zinc-300">引擎原生骨骼透视 (Skeleton)</span>
+                                <span class="text-[11px] text-zinc-300">Engine Native Skeleton</span>
                                 <input type="checkbox" id="skeleton-toggle" class="w-4 h-4 accent-orange-500 rounded">
                             </label>
                         </div>
                     </section>
                     
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-yellow-500 mb-3 flex items-center gap-2"><i data-lucide="sun" class="w-3 h-3"></i> 照明工作室</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-yellow-500 mb-3 flex items-center gap-2"><i data-lucide="sun" class="w-3 h-3"></i> Lighting Studio</h3>
                         <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-5">
                             <div class="space-y-2">
-                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>全景环境光 (Ambient)</span><span id="env-amb-v" class="font-mono text-yellow-500">1.0</span></div>
+                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Ambient Light</span><span id="env-amb-v" class="font-mono text-yellow-500">1.0</span></div>
                                 <input type="range" id="env-amb" min="0" max="3" step="0.05" value="1.0" class="w-full h-1 bg-zinc-800 rounded accent-yellow-500 cursor-pointer">
                             </div>
                             <div class="space-y-2">
-                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>主平行光照 (Directional)</span><span id="env-dir-v" class="font-mono text-yellow-500">1.5</span></div>
+                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Directional Light</span><span id="env-dir-v" class="font-mono text-yellow-500">1.5</span></div>
                                 <input type="range" id="env-dir" min="0" max="5" step="0.05" value="1.5" class="w-full h-1 bg-zinc-800 rounded accent-yellow-500 cursor-pointer">
                             </div>
                         </div>
                     </section>
 
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-pink-400 mb-3 flex items-center gap-2"><i data-lucide="image" class="w-3 h-3"></i> 显存管线 & 背景</h3>
+                        <h3 class="text-[10px] uppercase font-bold text-pink-400 mb-3 flex items-center gap-2"><i data-lucide="image" class="w-3 h-3"></i> VRAM Pipeline & Background</h3>
                         <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-4">
                             <div>
-                                <p class="text-[10px] text-zinc-500 mb-2 font-bold">画布清空颜色 (背景色)</p>
+                                <p class="text-[10px] text-zinc-500 mb-2 font-bold">Canvas Clear Color (Background)</p>
                                 <div class="flex gap-2">
-                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0a0a0a] hover:scale-110 transition-transform flex items-center justify-center text-[10px] text-zinc-400 bg-[radial-gradient(circle_at_center,_transparent_40%,_#333_100%)]" data-bg="transparent" title="Alpha通道透明"></button>
-                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#808080] hover:scale-110 transition-transform shadow shadow-zinc-500/50" data-bg="#808080" title="灰"></button>
-                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#00ff22] hover:scale-110 transition-transform shadow shadow-green-500/50" data-bg="#00ff22" title="绿幕 (纯度100%)"></button>
-                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0000ff] hover:scale-110 transition-transform shadow shadow-blue-500/50" data-bg="#0000ff" title="蓝幕 (纯度100%)"></button>
-                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#eeeeee] hover:scale-110 transition-transform shadow shadow-white" data-bg="#eeeeee" title="白"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0a0a0a] hover:scale-110 transition-transform flex items-center justify-center text-[10px] text-zinc-400 bg-[radial-gradient(circle_at_center,_transparent_40%,_#333_100%)]" data-bg="transparent" title="Alpha Channel Transparent"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#808080] hover:scale-110 transition-transform shadow shadow-zinc-500/50" data-bg="#808080" title="Gray"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#00ff22] hover:scale-110 transition-transform shadow shadow-green-500/50" data-bg="#00ff22" title="Green Screen (100% Pure)"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0000ff] hover:scale-110 transition-transform shadow shadow-blue-500/50" data-bg="#0000ff" title="Blue Screen (100% Pure)"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#eeeeee] hover:scale-110 transition-transform shadow shadow-white" data-bg="#eeeeee" title="White"></button>
                                 </div>
                             </div>
                         </div>

@@ -35,12 +35,12 @@ export function setupUIHandlers(globals) {
         consolePanel.style.height = "144px"; // 24px header + 120px body
         consoleLogs.classList.remove("hidden");
         consoleIcon.style.transform = "rotate(-180deg)";
-        consoleBtn.querySelector("span").innerText = "隐藏面板";
+        consoleBtn.querySelector("span").innerText = "Hide Panel";
       } else {
         consolePanel.style.height = "24px";
         consoleLogs.classList.add("hidden");
         consoleIcon.style.transform = "rotate(0deg)";
-        consoleBtn.querySelector("span").innerText = "打开面板";
+        consoleBtn.querySelector("span").innerText = "Open Panel";
       }
     });
   }
@@ -106,24 +106,49 @@ export function setupUIHandlers(globals) {
   };
 
   // Camera Views
+  const switchCamera = (mode) => {
+    if (mode === "front") {
+      globals.camera.position.set(0, 1.4, 3);
+      globals.controls.target.set(0, 1.1, 0);
+    } else if (mode === "side") {
+      globals.camera.position.set(2, 1.4, 0);
+      globals.controls.target.set(0, 1.1, 0);
+    } else if (mode === "face") {
+      globals.camera.position.set(0, 1.5, 0.7);
+      globals.controls.target.set(0, 1.45, 0);
+    } else if (mode === "top") {
+      globals.camera.position.set(0, 3, 0.01);
+      globals.controls.target.set(0, 0, 0);
+    }
+    globals.log(`Camera switched to: ${mode}`, "gray");
+  };
+
   document.querySelectorAll("[data-cam]").forEach((btn) => {
-    btn.onclick = () => {
-      const mode = btn.dataset.cam;
-      if (mode === "front") {
-        globals.camera.position.set(0, 1.4, 3);
-        globals.controls.target.set(0, 1.1, 0);
-      } else if (mode === "side") {
-        globals.camera.position.set(2, 1.4, 0);
-        globals.controls.target.set(0, 1.1, 0);
-      } else if (mode === "face") {
-        globals.camera.position.set(0, 1.5, 0.7);
-        globals.controls.target.set(0, 1.45, 0);
-      } else if (mode === "top") {
-        globals.camera.position.set(0, 3, 0.01);
-        globals.controls.target.set(0, 0, 0);
-      }
-      globals.log(`Camera switched to: ${mode}`, "gray");
-    };
+    btn.onclick = () => switchCamera(btn.dataset.cam);
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (
+      e.target.tagName === "INPUT" ||
+      e.target.tagName === "TEXTAREA" ||
+      e.target.tagName === "SELECT"
+    )
+      return;
+
+    switch (e.key) {
+      case "1":
+        switchCamera("front");
+        break;
+      case "2":
+        switchCamera("side");
+        break;
+      case "3":
+        switchCamera("face");
+        break;
+      case "4":
+        switchCamera("top");
+        break;
+    }
   });
   // Env toggles
   document.getElementById("grid-toggle").onchange = (e) => {
@@ -290,17 +315,12 @@ export function setupUIHandlers(globals) {
   };
 
   window.addEventListener("mousemove", (e) => {
-    if (
-      globals.isLookAtEnabled &&
-      globals.currentVRM &&
-      globals.currentVRM.lookAt
-    ) {
+    if (globals.isLookAtEnabled) {
       // Map mouse to a rough 3D coordinate space in front of the avatar
       const x = (e.clientX / window.innerWidth) * 2 - 1;
       const y = -(e.clientY / window.innerHeight) * 2 + 1;
-      // Avatar is at (0,0,0) usually. Target X, Y mapped, Z is positive distance
-      globals.lookAtTarget.set(x * 2.0, y * 2.0 + 1.2, 2.0);
-      globals.currentVRM.lookAt.lookAt(globals.lookAtTarget);
+      // Target X, Y mapped, Z is positive distance in front of avatar
+      globals.cameraTarget.set(x * 2.0, y * 2.0 + 1.2, 2.0);
     }
   });
 
@@ -321,7 +341,7 @@ export function setupUIHandlers(globals) {
       // Safeguard for Desktop Posing formats
       if (poseData.muscles !== undefined && !poseData.data) {
         globals.log(
-          "暂不支持解析包含 muscles 阵列的旧版 Desktop 格式，请通过原软件导出 VRMA 格式。",
+          "Parsing of legacy Desktop format containing the muscles array is not supported. Please export to VRMA format using the original software.",
           "yellow",
         );
         return;
@@ -330,7 +350,7 @@ export function setupUIHandlers(globals) {
       // Apply rotations from JSON
       const data = poseData.data;
       if (!data) {
-        globals.log("未识别的姿势数据文件结构。", "red");
+        globals.log("Unrecognized pose data file structure.", "red");
         return;
       }
       for (const boneName in data) {
@@ -411,7 +431,7 @@ export function setupUIHandlers(globals) {
           // Clear input so same file can be selected again if needed
           inputCustomPose.value = "";
         } catch (err) {
-          globals.log("无效的 JSON 文件格式 / Invalid JSON Format", "red");
+          globals.log("Invalid JSON Format", "red");
           console.error(err);
         }
       };

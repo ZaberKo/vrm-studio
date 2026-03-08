@@ -18,7 +18,7 @@ export function initAudioLipsync(globals) {
         const source = globals.audioCtx.createMediaStreamSource(stream);
         source.connect(globals.analyser);
 
-        label.innerText = "麦克风已启用 (点击关闭)";
+        label.innerText = "Mic Enabled (Click to Disable)";
         toggle.classList.replace("bg-zinc-800", "bg-blue-600");
         globals.log("Microphone engaged for Lip-sync", "green");
       } catch (e) {
@@ -27,11 +27,11 @@ export function initAudioLipsync(globals) {
     } else {
       if (globals.audioCtx.state === "running") {
         globals.audioCtx.suspend();
-        label.innerText = "已暂停麦克风";
+        label.innerText = "Mic Paused";
         toggle.classList.replace("bg-blue-600", "bg-zinc-800");
       } else {
         globals.audioCtx.resume();
-        label.innerText = "麦克风已启用 (点击关闭)";
+        label.innerText = "Mic Enabled (Click to Disable)";
         toggle.classList.replace("bg-zinc-800", "bg-blue-600");
       }
     }

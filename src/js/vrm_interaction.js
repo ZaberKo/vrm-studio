@@ -204,13 +204,11 @@ export function setupUIHandlers(globals) {
       if (url) {
         import("./vrm_loader.js").then((m) => {
           m.loadVRMA(url, globals).then(() => {
-            // After loading, it auto-plays.
-            // User requested: Status is Playing -> Play Icon
-            const playIcon = document
-              .getElementById("anim-play")
-              .querySelector("i");
-            if (playIcon) {
-              playIcon.setAttribute("data-lucide", "play");
+            const btn = document.getElementById("anim-play");
+            if (btn) {
+              btn.className =
+                "flex-1 bg-orange-600 text-white flex items-center justify-center py-2.5 rounded-md transition-all border border-orange-500 shadow-lg shadow-orange-500/30 group";
+              btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>`;
               lucide.createIcons();
             }
           });
@@ -232,15 +230,17 @@ export function setupUIHandlers(globals) {
           globals.currentAction.paused = !isPaused;
         }
 
-        const icon = playBtn.querySelector("i");
-        if (icon) {
-          // User requested: Status is Paused -> Pause Icon; Status is Playing -> Play Icon
-          icon.setAttribute(
-            "data-lucide",
-            globals.currentAction.paused ? "pause" : "play",
-          );
-          lucide.createIcons();
+        const isPlaying = !globals.currentAction.paused;
+        if (isPlaying) {
+          playBtn.className =
+            "flex-1 bg-orange-600 text-white flex items-center justify-center py-2.5 rounded-md transition-all border border-orange-500 shadow-lg shadow-orange-500/30 group";
+        } else {
+          playBtn.className =
+            "flex-1 bg-zinc-800 text-orange-400 hover:bg-zinc-700 flex items-center justify-center py-2.5 rounded-md transition-all border border-white/10 group";
         }
+
+        playBtn.innerHTML = `<i data-lucide="${isPlaying ? "pause" : "play"}" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>`;
+        lucide.createIcons();
 
         globals.log(
           globals.currentAction.paused
@@ -352,21 +352,39 @@ export function setupUIHandlers(globals) {
   };
 
   // Pre-bind all static and dynamic pose preset buttons
-  document
-    .getElementById("pose-preset-container")
-    .addEventListener("click", (e) => {
-      const btn = e.target.closest(".pose-preset");
-      if (!btn) return;
-      const posePath = btn.dataset.pose;
-      if (posePath === "t-pose" || !posePath) {
-        if (globals.currentVRM) {
-          globals.currentVRM.humanoid.resetNormalizedPose();
-          globals.log("Set to standard T-Pose.", "yellow");
-        }
-      } else {
-        loadPose(posePath);
+  document.getElementById("right-content").addEventListener("click", (e) => {
+    const btn = e.target.closest(".pose-preset");
+    if (!btn) return;
+    const posePath = btn.dataset.pose;
+    if (posePath === "t-pose" || !posePath) {
+      if (globals.currentVRM) {
+        if (globals.mixer) globals.mixer.stopAllAction();
+        globals.currentVRM.humanoid.resetNormalizedPose();
+        globals.log("Set to standard T-Pose.", "yellow");
       }
-    });
+    } else {
+      if (globals.mixer) globals.mixer.stopAllAction();
+      loadPose(posePath);
+    }
+  });
+
+  const btnIdleAnim = document.getElementById("btn-idle-anim");
+  if (btnIdleAnim) {
+    btnIdleAnim.onclick = () => {
+      import("./vrm_loader.js").then((m) => {
+        m.loadVRMA("/animations/idle_loop.vrma", globals).then(() => {
+          const btn = document.getElementById("anim-play");
+          if (btn) {
+            btn.className =
+              "flex-1 bg-orange-600 text-white flex items-center justify-center py-2.5 rounded-md transition-all border border-orange-500 shadow-lg shadow-orange-500/30 group";
+            btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>`;
+            lucide.createIcons();
+          }
+          globals.log("Idle Animation applied", "blue");
+        });
+      });
+    };
+  }
 
   // Custom Pose Upload Logic
   const btnImportPose = document.getElementById("btn-import-pose");

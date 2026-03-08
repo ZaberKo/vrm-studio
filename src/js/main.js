@@ -294,6 +294,7 @@ function animate() {
   if (globals.currentVRM) {
     globals.currentVRM.update(delta);
     updateAudioLipsync(globals.currentVRM, globals);
+    if (globals.autoBlink) globals.autoBlink.update(delta);
 
     if (globals.springBoneVisualizerRoots) {
       globals.springBoneVisualizerRoots.forEach((root) => {

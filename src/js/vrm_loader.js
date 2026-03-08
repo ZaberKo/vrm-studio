@@ -128,6 +128,11 @@ export async function loadVRM(url, scene, globals) {
     globals.updateHierarchy(vrm.scene);
     globals.initPhysics(vrm);
     globals.log(`Model Ready: ${vrm.meta?.name || "Unknown"}`, "green");
+
+    // Setup autoblink
+    import("./vrm_blink.js").then((m) => {
+      globals.autoBlink = new m.AutoBlink(vrm.expressionManager);
+    });
   } catch (e) {
     console.error(e);
     globals.log("Failed to load VRM: " + e.message, "red");

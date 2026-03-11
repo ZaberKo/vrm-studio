@@ -163,11 +163,32 @@ export class VRMControl {
         .filter((n) => nameToIndex[n] !== undefined)
         .map((n) => {
           const cfg = { index: nameToIndex[n] };
+          
+          /*
+           * =========================================
+           * IK JOINT LIMITS (DISABLED FOR STABILITY)
+           * =========================================
+           * 
+           * VRM models using VRMA/JSON poses rotate bones using Quaternions.
+           * CCDIKSolver attempts to clamp these angles using Euler limits (rotationMin/Max).
+           * When transitioning from an animation (e.g. dancing) into IK manual control,
+           * the solver forcibly clamps the Euler conversion of the quaternion space.
+           * This results in massive, sudden "snapping" or "teleporting" of limbs
+           * because the current rotation falls outside the strict Euler bounding box.
+           *
+           * To solve snapping: We completely disable limitation clamping.
+           * The arm will resume exactly where the animation left it, and the solver
+           * will naturally use the shortest path to bend. 
+           * If you desire strict anatomical limits and are willing to handle snapping,
+           * uncomment the block below.
+           *
           const limit = getLimits(n);
           if (limit) {
             if (limit.min) cfg.rotationMin = limit.min;
             if (limit.max) cfg.rotationMax = limit.max;
           }
+          */
+
           return cfg;
         });
 

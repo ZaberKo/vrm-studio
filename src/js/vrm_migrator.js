@@ -3,7 +3,7 @@
  * This script intercepts the GLB, modifies the JSON chunk, and repackages it.
  */
 
-export async function migrateVRM(arrayBuffer) {
+export async function migrateVRM(arrayBuffer, onMigrate) {
   const dataView = new DataView(arrayBuffer);
   
   // 1. Validate GLB Header
@@ -42,6 +42,11 @@ export async function migrateVRM(arrayBuffer) {
   }
 
   console.log("VRM 0.0 detected. Migrating to VRM 1.0 format...");
+  if (onMigrate) {
+    onMigrate();
+    // Yield to the browser so it can render the updated text
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
   
   const vrm0 = json.extensions.VRM;
   

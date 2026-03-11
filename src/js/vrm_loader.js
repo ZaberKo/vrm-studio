@@ -46,10 +46,15 @@ export async function loadVRM(url, scene, globals) {
   loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
 
   try {
+    loadingText.innerText = "FETCHING ASSETS...";
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
-    const migratedBuffer = await migrateVRM(arrayBuffer);
+    
+    const migratedBuffer = await migrateVRM(arrayBuffer, () => {
+      loadingText.innerText = "CONVERTING VRM 0.0 TO 1.0...";
+    });
 
+    loadingText.innerText = "PARSING MODEL...";
     const gltf = await loader.parseAsync(migratedBuffer, "");
 
     const vrm = gltf.userData.vrm;

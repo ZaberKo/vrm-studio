@@ -2,6 +2,7 @@ import * as THREE from "three/webgpu";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { initAudioLipsync, updateAudioLipsync } from "./vrm_audio.js";
 import { setupUIHandlers } from "./vrm_interaction.js";
+import { VRMControl } from "./vrm_control.js";
 
 const globals = {
   scene: null,
@@ -27,6 +28,7 @@ const globals = {
   boneMap: {},
   springBoneVisualizerRoots: [],
   isSeeking: false,
+  vrmControl: null, // Custom IK/FK controller
   fpsFrames: 0,
   fpsPrevTime: performance.now(),
   fpsHistory: new Array(60).fill(60),
@@ -124,10 +126,10 @@ const globals = {
 
       node.innerHTML = `
                 <div class="flex items-center gap-1 overflow-hidden">
-                    <i data-lucide="${isBone ? "bone" : "box"}" class="w-3 h-3 flex-shrink-0 ${isBone ? "text-orange-400" : "text-blue-400"}"></i> 
+                    <i data-lucide="${isBone ? "bone" : "box"}" class="w-3 h-3 shrink-0 ${isBone ? "text-orange-400" : "text-blue-400"}"></i> 
                     <span class="truncate">${obj.name || obj.type}</span>
                 </div>
-                <button class="vis-btn w-4 h-4 text-zinc-600 hover:text-white flex-shrink-0" title="Toggle Visibility">
+                <button class="vis-btn w-4 h-4 text-zinc-600 hover:text-white shrink-0" title="Toggle Visibility">
                     <i data-lucide="${obj.visible ? "eye" : "eye-off"}" class="w-3 h-3"></i>
                 </button>
             `;
@@ -138,6 +140,10 @@ const globals = {
           .querySelectorAll(".tree-node")
           .forEach((n) => n.classList.remove("selected"));
         node.classList.add("selected");
+
+        if (globals.vrmControl && globals.vrmControl.isActive) {
+           globals.vrmControl.selectBone(obj);
+        }
 
         globals.log(`Selected Node: ${obj.name}`, "blue");
       };
@@ -192,9 +198,8 @@ const globals = {
 
       // Override physics parameters dynamically based on defaults + multipliers
       vrm.springBoneManager.joints.forEach((bone) => {
-        // VRM 1.0/0.0 fallback: if settings exist
         if (bone.settings) {
-          // just a heuristic mapping
+          // Calculate mapped powers based on original values
           bone.settings.gravityPower =
             (bone.settings.originalGravityPower ||
               bone.settings.gravityPower ||
@@ -277,6 +282,23 @@ async function init() {
   // Initializations from modules
   setupUIHandlers(globals);
   initAudioLipsync(globals);
+  
+  globals.vrmControl = new VRMControl(globals);
+  
+  // Setup FK/IK Mode UI Toggle
+  const modeButtons = document.querySelectorAll("#kinematics-mode-group button");
+  modeButtons.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+          const mode = e.target.dataset.mode;
+          // Update active styling
+          modeButtons.forEach(b => {
+             b.className = "px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors";
+          });
+          e.target.className = "px-3 py-1 bg-blue-600 text-white font-bold transition-colors";
+          
+          globals.vrmControl.setMode(mode);
+      });
+  });
 
   window.addEventListener("resize", () => {
     if (!container || !viewport) return;
@@ -315,7 +337,7 @@ function animate() {
         );
       }
     }
-
+    if (globals.vrmControl) globals.vrmControl.update();
     globals.currentVRM.update(delta);
     updateAudioLipsync(globals.currentVRM, globals);
     if (globals.autoBlink) globals.autoBlink.update(delta);

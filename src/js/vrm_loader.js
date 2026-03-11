@@ -12,6 +12,7 @@ import {
   VRMAnimationLoaderPlugin,
   createVRMAnimationClip,
 } from "@pixiv/three-vrm-animation";
+import { migrateVRM } from "./vrm_migrator.js";
 
 export async function loadVRM(url, scene, globals) {
   const loadingOverlay = document.getElementById("loading-overlay");
@@ -45,20 +46,11 @@ export async function loadVRM(url, scene, globals) {
   loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
 
   try {
-    const gltf = await new Promise((resolve, reject) => {
-      loader.load(
-        url,
-        resolve,
-        (progress) => {
-          if (progress.total > 0) {
-            loadingBar.style.width = `${(progress.loaded / progress.total) * 100}%`;
-          } else {
-            loadingBar.style.width = "100%";
-          }
-        },
-        reject,
-      );
-    });
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const migratedBuffer = await migrateVRM(arrayBuffer);
+
+    const gltf = await loader.parseAsync(migratedBuffer, "");
 
     const vrm = gltf.userData.vrm;
     if (!vrm) throw new Error("File does not contain VRM user data.");
@@ -69,18 +61,9 @@ export async function loadVRM(url, scene, globals) {
     VRMUtils.combineSkeletons(gltf.scene);
     VRMUtils.combineMorphs(vrm);
 
-    // Rotate VRM 0.0 models to ensure they face the same direction (+Z) as VRM 1.0 models
-    VRMUtils.rotateVRM0(vrm);
-
     vrm.scene.traverse((obj) => {
       obj.frustumCulled = false;
     });
-
-    // Rotate the model 180 degrees only if it is VRM 0.0
-    // VRM 1.0 is naturally facing camera (+Z) natively from export in most VRM 1.0 implementations.
-    if (vrm.meta.metaVersion === "0") {
-      vrm.scene.rotation.y = Math.PI;
-    }
 
     // Connect the persistent LookAt Object3D to the newly loaded VRM
     if (vrm.lookAt) {

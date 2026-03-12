@@ -9,12 +9,12 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
   // 1. Validate GLB Header
   const magic = dataView.getUint32(0, true);
   if (magic !== 0x46546C67) { // 'glTF'
-    return arrayBuffer; // Not a GLB, let the normal loader handle it
+    return { buffer: arrayBuffer, migrated: false }; // Not a GLB, let the normal loader handle it
   }
 
   const version = dataView.getUint32(4, true);
   if (version !== 2) {
-    return arrayBuffer;
+    return { buffer: arrayBuffer, migrated: false };
   }
 
   // 2. Parse Chunk 0 (JSON)
@@ -22,7 +22,7 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
   let jsonChunkType = dataView.getUint32(16, true);
   
   if (jsonChunkType !== 0x4E4F534A) { // 'JSON'
-    return arrayBuffer; // No JSON chunk where expected
+    return { buffer: arrayBuffer, migrated: false }; // No JSON chunk where expected
   }
 
   const jsonChunkOffset = 20;
@@ -33,12 +33,12 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
   try {
     json = JSON.parse(jsonString);
   } catch (e) {
-    return arrayBuffer;
+    return { buffer: arrayBuffer, migrated: false };
   }
 
   // 3. Check if it's a VRM 0.0 file
   if (!json.extensions || !json.extensions.VRM) {
-    return arrayBuffer; // Not VRM 0.0
+    return { buffer: arrayBuffer, migrated: false }; // Not VRM 0.0
   }
 
   console.log("VRM 0.0 detected. Migrating to VRM 1.0 format...");
@@ -357,5 +357,5 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
   newUint8Array.set(oldUint8Array.subarray(20 + jsonChunkLength), 20 + newJsonChunkLength);
 
   console.log("Migration complete.");
-  return newArrayBuffer;
+  return { buffer: newArrayBuffer, migrated: true };
 }

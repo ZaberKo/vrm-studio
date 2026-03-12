@@ -14,7 +14,7 @@ import {
 } from "@pixiv/three-vrm-animation";
 import { migrateVRM } from "./vrm_migrator.js";
 
-export async function loadVRM(url, scene, globals) {
+export async function loadVRM(url, scene, globals, filename = null) {
   const loadingOverlay = document.getElementById("loading-overlay");
   const loadingBar = document.getElementById("loading-bar");
   const loadingText = document.getElementById("loading-text");
@@ -50,9 +50,23 @@ export async function loadVRM(url, scene, globals) {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
     
-    const migratedBuffer = await migrateVRM(arrayBuffer, () => {
+    const { buffer: migratedBuffer, migrated } = await migrateVRM(arrayBuffer, () => {
       loadingText.innerText = "CONVERTING VRM 0.0 TO 1.0...";
     });
+
+    // Cache the migrated buffer for download if it was converted
+    const downloadBtn = document.getElementById("download-vrm-btn");
+    globals.lastMigratedBuffer = migrated ? migratedBuffer : null;
+    
+    // Derive name: prioritize passed filename, then URL, fallback to default
+    const originalName = filename || (url.includes('blob:') ? 'model.vrm' : url.split('/').pop());
+    globals.lastMigratedName = migrated ? originalName.replace('.vrm', '_v1.vrm') : null;
+    
+    if (migrated && downloadBtn) {
+       downloadBtn.classList.remove("hidden");
+    } else if (downloadBtn) {
+       downloadBtn.classList.add("hidden");
+    }
 
     loadingText.innerText = "PARSING MODEL...";
     const gltf = await loader.parseAsync(migratedBuffer, "");

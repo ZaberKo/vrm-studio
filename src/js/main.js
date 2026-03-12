@@ -32,6 +32,8 @@ const globals = {
   fpsFrames: 0,
   fpsPrevTime: performance.now(),
   fpsHistory: new Array(60).fill(60),
+  lastMigratedBuffer: null,
+  lastMigratedName: null,
 
   log: function (msg, color = "gray") {
     const logEl = document.getElementById("console-logs");

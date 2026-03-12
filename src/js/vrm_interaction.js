@@ -92,6 +92,24 @@ export function setupUIHandlers(globals) {
   // File Input
   document.getElementById("import-btn").onclick = () =>
     document.getElementById("file-input").click();
+
+  document.getElementById("download-vrm-btn").onclick = () => {
+    if (!globals.lastMigratedBuffer) return;
+
+    const blob = new Blob([globals.lastMigratedBuffer], {
+      type: "application/octet-stream",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = globals.lastMigratedName || "migrated_v1.vrm";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    globals.log("Downloaded migrated VRM 1.0 file", "green");
+  };
   document.getElementById("file-input").onchange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -99,7 +117,7 @@ export function setupUIHandlers(globals) {
     const ext = file.name.split(".").pop().toLowerCase();
     if (ext === "vrm")
       import("./vrm_loader.js").then((m) =>
-        m.loadVRM(url, globals.scene, globals),
+        m.loadVRM(url, globals.scene, globals, file.name),
       );
     else if (ext === "vrma" || ext === "glb" || ext === "gltf")
       import("./vrm_loader.js").then((m) => m.loadVRMA(url, globals));

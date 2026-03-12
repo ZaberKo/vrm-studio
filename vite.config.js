@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [tailwindcss()],
-  base: "/vrm_studio/",
+  base: "/vrm-studio/",
   root: "src",
   publicDir: "../public",
   build: {

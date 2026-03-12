@@ -475,6 +475,46 @@ export function setupUIHandlers(globals) {
       reader.readAsText(file);
     };
   }
+
+  // Custom Pose Export Logic
+  const btnExportPose = document.getElementById("btn-export-pose");
+  if (btnExportPose) {
+    btnExportPose.onclick = () => {
+      if (!globals.currentVRM || !globals.currentVRM.humanoid) {
+        globals.log("No VRM loaded to export pose from.", "yellow");
+        return;
+      }
+      
+      const humanoid = globals.currentVRM.humanoid;
+      const poseData = {
+        name: `Exported Pose ${new Date().toLocaleTimeString()}`,
+        code: self.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        vrmVersion: "1.0",
+        data: {}
+      };
+
+      Object.keys(humanoid.humanBones).forEach((name) => {
+        const node = humanoid.getNormalizedBoneNode(name);
+        if (node) {
+          poseData.data[name] = {
+            rotation: node.quaternion.toArray()
+          };
+        }
+      });
+
+      const blob = new Blob([JSON.stringify(poseData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `exported_pose_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      globals.log("Pose exported successfully.", "green");
+    };
+  }
 } // End setupUIHandlers
 
 function setupDraggableStats() {

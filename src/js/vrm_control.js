@@ -2,6 +2,9 @@ import * as THREE from "three/webgpu";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { CCDIKSolver } from "three/addons/animation/CCDIKSolver.js";
 
+const IK_COLOR = 0xff3300; // Brighter neon orange for IK
+const FK_COLOR = 0x00ffaa; // Neon green for FK
+
 export class VRMControl {
   constructor(globals) {
     this.globals = globals;
@@ -18,6 +21,10 @@ export class VRMControl {
     this.helperCache = []; // Array to store bone helper meshes
     this.ikTargets = []; // Array to store generated IK Target Object3Ds
     this.ikSolver = null;
+
+    // Configurable style properties for indicators
+    this.indicatorOpacity = 0.8;
+    this.indicatorRadius = 0.015;
 
     this.transformControls.setSpace("local");
     this.transformControls.size = 0.5;
@@ -217,13 +224,13 @@ export class VRMControl {
     const humanBones = humanoid.humanBones;
     // Visually distinct helper: small semi-transparent sphere
     const material = new THREE.MeshBasicMaterial({
-      color: this.mode === "IK" ? 0xffaa00 : 0x00ffaa,
+      color: this.mode === "IK" ? IK_COLOR : FK_COLOR, 
       depthTest: false,
       depthWrite: false,
       transparent: true,
-      opacity: 0.3,
+      opacity: this.indicatorOpacity, 
     });
-    const geometry = new THREE.SphereGeometry(0.015, 16, 16);
+    const geometry = new THREE.SphereGeometry(this.indicatorRadius, 16, 16);
 
     for (const key in humanBones) {
       const vrmBone = humanBones[key];
@@ -267,9 +274,30 @@ export class VRMControl {
     if (this.selectedBone) {
       // Revert helper color
       const helper = this.helperCache.find((h) => h.userData.bone === this.selectedBone);
-      if (helper) helper.material.color.setHex(this.mode === "IK" ? 0xffaa00 : 0x00ffaa);
+      if (helper) helper.material.color.setHex(this.mode === "IK" ? IK_COLOR : FK_COLOR);
     }
     this.selectedBone = null;
+  }
+
+  updateIndicators(opacity, radius) {
+    if (opacity !== undefined) this.indicatorOpacity = opacity;
+    if (radius !== undefined) this.indicatorRadius = radius;
+
+    const baseRadius = 0.015; // This matches the initial SphereGeometry radius defined in generateHelpers
+    const scaleFactor = this.indicatorRadius / baseRadius;
+
+    // Apply instantly to existing helpers
+    this.helperCache.forEach((helper) => {
+      // 1. Update Opacity
+      if (opacity !== undefined && helper.material) {
+        helper.material.opacity = this.indicatorOpacity;
+      }
+      
+      // 2. Performant Update Radius: just scale the mesh!
+      if (radius !== undefined) {
+        helper.scale.set(scaleFactor, scaleFactor, scaleFactor);
+      }
+    });
   }
 
   onClick(event) {

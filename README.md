@@ -70,9 +70,9 @@ Due to differences in coordinate systems (VRM 0.0 faces `-Z`, VRM 1.0 faces `+Z`
 
 You can batch-convert old `vrmVersion: "0"` poses inside the project by running:
 ```bash
-node fix_poses.js
+node scripts/fix_poses.js
 ```
-*Tip: To convert a custom directory, run `node fix_poses.js path/to/your/poses`.*
+*Tip: To convert a custom directory, run `node scripts/fix_poses.js path/to/your/poses`.*
 
 ## 🛠 Technology Stack
 - **Engine**: [Three.js](https://threejs.org/)

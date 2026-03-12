@@ -366,6 +366,12 @@ export function setupUIHandlers(globals) {
       const poseData = await resp.json();
       const humanoid = globals.currentVRM.humanoid;
 
+      // Disable kinematics so they don't fight the pose
+      if (globals.vrmControl) {
+        globals.vrmControl.setMode("OFF");
+        updateKinematicsUIState(false); // Ensure buttons are active
+      }
+
       // Reset first
       humanoid.resetNormalizedPose();
 
@@ -409,6 +415,10 @@ export function setupUIHandlers(globals) {
     const posePath = btn.dataset.pose;
     if (posePath === "t-pose" || !posePath) {
       if (globals.currentVRM) {
+        if (globals.vrmControl) {
+          globals.vrmControl.setMode("OFF");
+          updateKinematicsUIState(false);
+        }
         if (globals.mixer) globals.mixer.stopAllAction();
         globals.currentVRM.humanoid.resetNormalizedPose();
         globals.log("Set to standard T-Pose.", "yellow");
@@ -515,6 +525,31 @@ export function setupUIHandlers(globals) {
       globals.log("Pose exported successfully.", "green");
     };
   }
+
+  // Kinematics Indicator Sliders
+  const radiusSlider = document.getElementById("slider-indicator-radius");
+  const radiusLabel = document.getElementById("label-indicator-radius");
+  if (radiusSlider && radiusLabel) {
+    radiusSlider.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      radiusLabel.innerText = val.toFixed(3);
+      if (globals.vrmControl) {
+        globals.vrmControl.updateIndicators(undefined, val);
+      }
+    });
+  }
+
+  const opacitySlider = document.getElementById("slider-indicator-opacity");
+  const opacityLabel = document.getElementById("label-indicator-opacity");
+  if (opacitySlider && opacityLabel) {
+    opacitySlider.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      opacityLabel.innerText = val.toFixed(1);
+      if (globals.vrmControl) {
+        globals.vrmControl.updateIndicators(val, undefined);
+      }
+    });
+  }
 } // End setupUIHandlers
 
 function setupDraggableStats() {
@@ -585,6 +620,14 @@ function updateKinematicsUIState(disabled) {
       btn.style.opacity = "1";
       btn.style.pointerEvents = "auto";
       btn.style.cursor = "pointer";
+      
+      // When re-enabling (or just syncing state to OFF without disabling ui), 
+      // ensure the OFF button is visually selected and others are deselected.
+      if (btn.dataset.mode === "OFF") {
+        btn.className = "px-3 py-1 bg-blue-600 text-white font-bold transition-colors";
+      } else {
+        btn.className = "px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors";
+      }
     }
   });
 

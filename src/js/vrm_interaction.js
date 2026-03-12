@@ -218,7 +218,7 @@ export function setupUIHandlers(globals) {
     document.getElementById("env-amb-v").innerText = v.toFixed(2);
     
     if (globals.ambientLight) {
-      globals.ambientLight.intensity = Math.PI * (v + 0.01);
+      globals.ambientLight.intensity = Math.max(v, 0.01);
     }
   };
 
@@ -227,7 +227,7 @@ export function setupUIHandlers(globals) {
     document.getElementById("env-dir-v").innerText = v.toFixed(2);
     
     if (globals.dirLight) {
-      globals.dirLight.intensity = Math.PI * v;
+      globals.dirLight.intensity = v;
     }
   };
   

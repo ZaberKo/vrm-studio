@@ -272,10 +272,10 @@ async function init() {
   globals.controls.target.set(0, 1.1, 0);
   globals.controls.enableDamping = true;
 
-  globals.ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+  globals.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   globals.scene.add(globals.ambientLight);
 
-  globals.dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+  globals.dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
   globals.dirLight.position.set(1, 2, 3);
   globals.dirLight.castShadow = true;
   globals.scene.add(globals.dirLight);

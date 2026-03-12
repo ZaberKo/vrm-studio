@@ -4,7 +4,7 @@ A high-performance, web-based VRM viewer and utility suite designed for 3D human
 
 👉 **[Live Demo available here](https://zaberko.github.io/vrm-studio/)**
 
-![VRM Studio Interface](https://raw.githubusercontent.com/vrm-c/vrm-specification/master/vrm.png) *(Placeholder image reminder: Replace with actual screenshot)*
+![VRM Studio Interface](./public/vrm-studio-screenshot.png)
 
 ## ✨ Key Features
 

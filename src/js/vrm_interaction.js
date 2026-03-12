@@ -245,6 +245,12 @@ export function setupUIHandlers(globals) {
     presetSelect.onchange = (e) => {
       const url = e.target.value;
       if (url) {
+        // Auto-disable IK/FK when animation starts
+        if (globals.vrmControl) {
+          globals.vrmControl.setMode("OFF");
+          updateKinematicsUIState(true);
+        }
+
         import("./vrm_loader.js").then((m) => {
           m.loadVRMA(url, globals).then(() => {
             const btn = document.getElementById("anim-play");
@@ -274,6 +280,13 @@ export function setupUIHandlers(globals) {
         }
 
         const isPlaying = !globals.currentAction.paused;
+        
+        // Coordination: Only disable IK/FK buttons during active playback
+        if (isPlaying && globals.vrmControl) {
+          globals.vrmControl.setMode("OFF");
+        }
+        updateKinematicsUIState(isPlaying);
+
         if (isPlaying) {
           playBtn.className =
             "flex-1 bg-orange-600 text-white flex items-center justify-center py-2.5 rounded-md transition-all border border-orange-500 shadow-lg shadow-orange-500/30 group";
@@ -409,6 +422,12 @@ export function setupUIHandlers(globals) {
   const btnIdleAnim = document.getElementById("btn-idle-anim");
   if (btnIdleAnim) {
     btnIdleAnim.onclick = () => {
+      // Auto-disable IK/FK when animation starts
+      if (globals.vrmControl) {
+        globals.vrmControl.setMode("OFF");
+        updateKinematicsUIState(true);
+      }
+
       import("./vrm_loader.js").then((m) => {
         m.loadVRMA("/animations/idle_loop.vrma", globals).then(() => {
           const btn = document.getElementById("anim-play");
@@ -498,5 +517,45 @@ function setupDraggableStats() {
       el.style.transition = ""; // restore transition
     }
   });
+}
+
+/**
+ * Coordination helper to enable/disable IK/FK buttons during animation playback
+ */
+function updateKinematicsUIState(disabled) {
+  const group = document.getElementById("kinematics-mode-group");
+  if (!group) return;
+
+  const buttons = group.querySelectorAll("button");
+  buttons.forEach((btn) => {
+    btn.disabled = disabled;
+    if (disabled) {
+      btn.style.opacity = "0.4";
+      btn.style.pointerEvents = "none";
+      btn.style.cursor = "not-allowed";
+      // Ensure OFF is visually active if we forced mode to OFF
+      if (btn.dataset.mode === "OFF") {
+        btn.className =
+          "px-3 py-1 bg-zinc-700 text-white font-bold transition-colors";
+      } else {
+        btn.className =
+          "px-3 py-1 bg-[#111] text-zinc-500 font-bold transition-colors";
+      }
+    } else {
+      btn.style.opacity = "1";
+      btn.style.pointerEvents = "auto";
+      btn.style.cursor = "pointer";
+    }
+  });
+
+  const desc = document.getElementById("kinematics-desc");
+  if (desc) {
+    desc.innerText = disabled
+      ? "Kinematics disabled during animation playback."
+      : "Select IK or FK to enable bone manipulation.";
+    desc.className = disabled
+      ? "text-[9px] text-orange-400 font-bold animate-pulse"
+      : "text-[9px] text-zinc-500 italic";
+  }
 }
 

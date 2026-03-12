@@ -176,7 +176,7 @@ export async function loadVRM(url, scene, globals, filename = null) {
   }
 }
 
-export async function loadVRMA(url, globals) {
+export async function loadVRMA(url, globals, filename = null) {
   if (!globals.currentVRM) {
     globals.log("Load a VRM model first!", "red");
     return;
@@ -208,8 +208,9 @@ export async function loadVRMA(url, globals) {
       globals.currentAction = globals.mixer.clipAction(clip);
       globals.currentAction.play();
 
+      const displayName = filename || (url.includes('blob:') ? 'Custom Animation' : url.split("/").pop());
       document.getElementById("anim-name").innerText =
-        url.split("/").pop() || "Loaded Animation";
+        displayName || "Loaded Animation";
       document.getElementById("anim-time").innerText =
         "0.0s / " + clip.duration.toFixed(1) + "s";
       globals.log(`Animation loaded: ${clip.duration.toFixed(1)}s`, "blue");

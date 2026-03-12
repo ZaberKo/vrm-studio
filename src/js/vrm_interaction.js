@@ -297,6 +297,41 @@ export function setupUIHandlers(globals) {
     };
   }
 
+  // Custom Motion Upload Logic
+  const btnImportVrma = document.getElementById("btn-import-vrma");
+  const inputCustomVrma = document.getElementById("input-custom-vrma");
+
+  if (btnImportVrma && inputCustomVrma) {
+    btnImportVrma.onclick = () => inputCustomVrma.click();
+    inputCustomVrma.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      
+      // Auto-disable IK/FK when animation starts
+      if (globals.vrmControl) {
+        globals.vrmControl.setMode("OFF");
+        updateKinematicsUIState(true);
+      }
+
+      import("./vrm_loader.js").then((m) => {
+        m.loadVRMA(url, globals, file.name).then(() => {
+          const btn = document.getElementById("anim-play");
+          if (btn) {
+            btn.className =
+              "flex-1 bg-orange-600 text-white flex items-center justify-center py-2.5 rounded-md transition-all border border-orange-500 shadow-lg shadow-orange-500/30 group";
+            btn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>`;
+            lucide.createIcons();
+          }
+          URL.revokeObjectURL(url);
+        });
+      });
+      
+      inputCustomVrma.value = "";
+    };
+  }
+
   const playBtn = document.getElementById("anim-play");
   if (playBtn) {
     playBtn.onclick = () => {
@@ -456,7 +491,10 @@ export function setupUIHandlers(globals) {
       }
     } else {
       if (globals.mixer) globals.mixer.stopAllAction();
-      loadPose(posePath);
+      const finalUrl = posePath.startsWith('/') 
+        ? `${import.meta.env.BASE_URL}${posePath.slice(1)}`
+        : posePath;
+      loadPose(finalUrl);
     }
   });
 

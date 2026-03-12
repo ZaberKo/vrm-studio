@@ -470,7 +470,7 @@ export function setupUIHandlers(globals) {
       }
 
       import("./vrm_loader.js").then((m) => {
-        m.loadVRMA("/animations/idle_loop.vrma", globals).then(() => {
+        m.loadVRMA(`${import.meta.env.BASE_URL}animations/idle_loop.vrma`, globals).then(() => {
           const btn = document.getElementById("anim-play");
           if (btn) {
             btn.className =

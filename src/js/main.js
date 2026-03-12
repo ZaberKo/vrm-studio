@@ -22,7 +22,7 @@ const globals = {
   audioCtx: null,
   analyser: null,
   dataArray: null,
-  isLookAtEnabled: false,
+  isLookAtEnabled: true,
   lookAtTarget: new THREE.Object3D(),
   cameraTarget: new THREE.Vector3(),
   boneMap: {},
@@ -64,13 +64,13 @@ const globals = {
       item.className = "space-y-1 mb-2";
       item.innerHTML = `
                 <div class="flex justify-between text-[10px] text-zinc-400 font-mono">
-                    <span class="uppercase">${exp.expressionName}</span>
+                    <span class="">${exp.expressionName}</span>
                     <span id="val-${exp.expressionName}">0%</span>
                 </div>
                 <input type="range" min="0" max="1" step="0.01" value="0" 
-                       class="w-full h-1 bg-zinc-800 rounded accent-blue-500 cursor-pointer"
+                       class="w-full h-1 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none accent-blue-500 cursor-pointer"
                        data-exp="${exp.expressionName}">
-            `;
+   `;
       const slider = item.querySelector("input");
       slider.oninput = (e) => {
         const v = parseFloat(e.target.value);
@@ -100,11 +100,11 @@ const globals = {
     container.innerHTML = data
       .map(
         (i) => `
-            <div class="flex flex-col border-b border-white/5 pb-1 gap-1 mt-1">
-                <span class="text-zinc-500 font-bold shrink-0 text-[10px] capitalize">${i.k}</span>
-                <span class="text-zinc-300 font-medium break-all text-[11px]" title='${i.v.replace(/'/g, "&#39;")}'>${i.v}</span>
-            </div>
-        `,
+   <div class="flex flex-col border-b border-white/5 pb-1 gap-1 mt-1">
+    <span class="text-zinc-500 font-bold shrink-0 text-[10px] capitalize">${i.k}</span>
+    <span class="text-zinc-300 font-medium break-all text-[11px]" title='${i.v.replace(/'/g, "&#39;")}'>${i.v}</span>
+   </div>
+  `,
       )
       .join("");
   },
@@ -127,14 +127,14 @@ const globals = {
       }
 
       node.innerHTML = `
-                <div class="flex items-center gap-1 overflow-hidden">
-                    <i data-lucide="${isBone ? "bone" : "box"}" class="w-3 h-3 shrink-0 ${isBone ? "text-orange-400" : "text-blue-400"}"></i> 
-                    <span class="truncate">${obj.name || obj.type}</span>
-                </div>
-                <button class="vis-btn w-4 h-4 text-zinc-600 hover:text-white shrink-0" title="Toggle Visibility">
-                    <i data-lucide="${obj.visible ? "eye" : "eye-off"}" class="w-3 h-3"></i>
-                </button>
-            `;
+    <div class="flex items-center gap-1 overflow-hidden">
+     <i data-lucide="${isBone ? "bone" : "box"}" class="w-3 h-3 shrink-0 ${isBone ? "text-orange-400" : "text-blue-400"}"></i> 
+     <span class="truncate">${obj.name || obj.type}</span>
+    </div>
+    <button class="vis-btn w-4 h-4 text-zinc-600 hover:text-white shrink-0" title="Toggle Visibility">
+     <i data-lucide="${obj.visible ? "eye" : "eye-off"}" class="w-3 h-3"></i>
+    </button>
+   `;
 
       node.onclick = (e) => {
         e.stopPropagation();
@@ -144,7 +144,7 @@ const globals = {
         node.classList.add("selected");
 
         if (globals.vrmControl && globals.vrmControl.isActive) {
-           globals.vrmControl.selectBone(obj);
+          globals.vrmControl.selectBone(obj);
         }
 
         globals.log(`Selected Node: ${obj.name}`, "blue");
@@ -174,8 +174,10 @@ const globals = {
     const visToggle = document.getElementById("sb-vis-toggle");
     visToggle.onchange = (e) => {
       const on = e.target.checked;
-      if (vrm.springBoneManager) {
-        // Simple visualizer toggle logic if available in future, or we just notify
+      if (globals.springBoneVisualizerRoots) {
+        globals.springBoneVisualizerRoots.forEach((root) => {
+          root.visible = on;
+        });
         globals.log(
           `SpringBone visualizer ${on ? "Enabled" : "Disabled"}`,
           "purple",
@@ -284,22 +286,26 @@ async function init() {
   // Initializations from modules
   setupUIHandlers(globals);
   initAudioLipsync(globals);
-  
+
   globals.vrmControl = new VRMControl(globals);
-  
+
   // Setup FK/IK Mode UI Toggle
-  const modeButtons = document.querySelectorAll("#kinematics-mode-group button");
-  modeButtons.forEach(btn => {
-      btn.addEventListener("click", (e) => {
-          const mode = e.target.dataset.mode;
-          // Update active styling
-          modeButtons.forEach(b => {
-             b.className = "px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors";
-          });
-          e.target.className = "px-3 py-1 bg-blue-600 text-white font-bold transition-colors";
-          
-          globals.vrmControl.setMode(mode);
+  const modeButtons = document.querySelectorAll(
+    "#kinematics-mode-group button",
+  );
+  modeButtons.forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      const mode = e.target.dataset.mode;
+      // Update active styling
+      modeButtons.forEach((b) => {
+        b.className =
+          "px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors";
       });
+      e.target.className =
+        "px-3 py-1 bg-blue-600 text-white font-bold transition-colors";
+
+      globals.vrmControl.setMode(mode);
+    });
   });
 
   window.addEventListener("resize", () => {
@@ -349,6 +355,17 @@ function animate() {
         if (root.visible) {
           root.children.forEach((helper) => {
             if (helper.update) helper.update();
+            helper.traverse((child) => {
+              if (child.isMesh || child.isLine || child.isLineSegments) {
+                if (child.material) {
+                  child.material.depthTest = false;
+                  child.material.depthWrite = true;
+                  child.material.transparent = true;
+                  child.material.opacity = 0.8;
+                  child.renderOrder = 9999;
+                }
+              }
+            });
           });
         }
       });

@@ -6,24 +6,44 @@
     <title>VRM Studio</title>
     <link href="./style.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // System preference script
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         :root {
+            --bg-color: #f8fafc;
+            --panel-color: #ffffff;
+            --border-color: #e2e8f0;
+            --accent-color: #3b82f6;
+        }
+        .dark {
             --bg-color: #0a0a0a;
             --panel-color: #161616;
             --border-color: #262626;
             --accent-color: #3b82f6;
         }
-        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: #e5e5e5; overflow: hidden; margin: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: #0f172a; overflow: hidden; margin: 0; }
+        .dark body { color: #e5e5e5; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #333; }
         canvas { display: block; outline: none; }
-        .panel-glass { background: rgba(22, 22, 22, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-color); }
+        .panel-glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid var(--border-color); }
+        .dark .panel-glass { background: rgba(22, 22, 22, 0.85); }
         .tab-active { border-bottom: 2px solid var(--accent-color); color: var(--accent-color); }
-        .tree-node:hover { background: rgba(255,255,255,0.05); }
-        .tree-node.selected { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .custom-scroll { scrollbar-width: thin; scrollbar-color: #333 transparent; }
+        .tree-node:hover { background: rgba(0,0,0,0.05); }
+        .dark .tree-node:hover { background: rgba(255,255,255,0.05); }
+        .tree-node.selected { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+        .dark .tree-node.selected { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .custom-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .dark .custom-scroll { scrollbar-color: #333 transparent; }
         .custom-listbox option { padding: 4px 6px; border-radius: 4px; }
         .custom-listbox option:checked { background-color: #3b82f6 !important; color: white; }
         #stats-container { position: absolute; top: 1rem; left: 1rem; z-index: 50; }
@@ -36,9 +56,13 @@
         <div class="flex items-center gap-2">
             <i data-lucide="cpu" class="w-5 h-5 text-blue-500"></i>
             <span class="font-bold tracking-tight text-sm">VRM <span class="text-blue-500">STUDIO</span></span>
+            <button id="theme-toggle" class="ml-2 p-1.5 rounded-md hover:bg-black/5 dark:hover:bg-white/5 text-slate-500 dark:text-zinc-500 transition-colors" title="Toggle Theme">
+                <i data-lucide="sun" id="theme-icon-light" class="w-4 h-4 hidden dark:block"></i>
+                <i data-lucide="moon" id="theme-icon-dark" class="w-4 h-4 block dark:hidden"></i>
+            </button>
         </div>
         <div class="flex items-center gap-4 text-xs">
-            <div id="model-status" class="flex items-center gap-2 text-zinc-400">
+            <div id="model-status" class="flex items-center gap-2 text-slate-500 dark:text-zinc-400">
                 <div class="w-2 h-2 rounded-full bg-red-500" id="status-dot"></div>
                 <span id="status-text" class="font-bold">Waiting for model</span>
             </div>
@@ -49,7 +73,7 @@
                 <button id="download-vrm-btn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors shadow shadow-indigo-500/20">
                     <i data-lucide="download" class="w-3 h-3"></i> Export 1.0
                 </button>
-                <button id="screenshot-btn" class="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors border border-white/5">
+                <button id="screenshot-btn" class="bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-900 dark:text-white px-3 py-1.5 rounded-md flex items-center gap-1 cursor-pointer transition-colors border border-black/5 dark:border-white/5">
                     <i data-lucide="camera" class="w-3 h-3 text-purple-400"></i> Capture
                 </button>
             </div>
@@ -61,81 +85,81 @@
         <!-- Left Panel -->
         <aside class="w-[20%] xl:w-[15%] min-w-[280px] max-w-[360px] shrink-0 border-r border-[var(--border-color)] bg-[var(--panel-color)] flex flex-col z-20">
             <div class="flex border-b border-[var(--border-color)]" id="left-tabs">
-                <button data-tab="assets" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-wider tab-active transition-colors">Assets</button>
-                <button data-tab="hierarchy" class="flex-1 py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Tree</button>
+                <button data-tab="assets" class="flex-1 py-3 text-[10px] font-bold tab-active transition-colors">Assets</button>
+                <button data-tab="hierarchy" class="flex-1 py-3 text-[10px] font-bold text-slate-500 dark:text-zinc-500 hover:text-zinc-300 transition-colors">Tree</button>
             </div>
             
             <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scroll" id="left-content">
                 <div id="tab-assets" class="space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3 flex gap-2 items-center"><i data-lucide="info" class="w-3 h-3"></i> Metadata & License</h3>
-                        <div id="meta-container" class="space-y-2 text-[11px] text-zinc-400">Waiting for model to load...</div>
+                        <h3 class="text-[10px] text-slate-500 dark:text-zinc-500 font-bold mb-3 flex gap-2 items-center"><i data-lucide="info" class="w-3 h-3"></i> Metadata & License</h3>
+                        <div id="meta-container" class="space-y-2 text-[11px] text-slate-500 dark:text-zinc-400">Waiting for model to load...</div>
                     </section>
                 </div>
                 <div id="tab-hierarchy" class="hidden space-y-2 text-[11px]">
-                    <div id="hierarchy-tree" class="font-mono text-zinc-300"></div>
+                    <div id="hierarchy-tree" class="font-mono text-slate-700 dark:text-zinc-300"></div>
                 </div>
             </div>
         </aside>
 
         <!-- Main Viewport -->
-        <div id="viewport-container" class="flex-1 min-w-[500px] bg-[#0f0f0f] flex flex-col relative overflow-hidden">
+        <div id="viewport-container" class="flex-1 min-w-[500px] bg-slate-100 dark:bg-[#0f0f0f] flex flex-col relative overflow-hidden">
             <!-- 3D Canvas Area (Flex Grow) -->
             <div class="flex-1 relative" id="canvas-container">
             <div id="drop-zone" class="absolute inset-0 z-100 bg-blue-500/20 border-[3px] border-blue-500 border-dashed m-4 rounded-[30px] hidden flex-col items-center justify-center pointer-events-none transition-all backdrop-blur-sm shadow-[0_0_50px_rgba(59,130,246,0.2)]">
                 <i data-lucide="upload-cloud" class="w-16 h-16 text-blue-400 mb-4 animate-bounce"></i>
-                <span class="text-xl font-bold text-white tracking-widest shadow-black drop-shadow-lg">Drop to load file (.vrm / .vrma)</span>
+                <span class="text-xl font-bold text-slate-900 dark:text-white shadow-black drop-shadow-lg">Drop to load file (.vrm / .vrma)</span>
             </div>
             
-            <div id="stats-container" class="absolute z-30 flex flex-col gap-2 w-[150px] h-fit opacity-75 hover:opacity-100 transition-opacity bg-[#161616]/60 backdrop-blur-md p-3 rounded-lg shadow-lg shadow-black/50 border border-white/10 cursor-move" style="left: 20px; top: calc(100% - 200px);">
-                <div id="stats-drag-handle" class="flex justify-between items-end border-b border-white/5 pb-2 mb-1">
-                    <span class="text-[10px] text-zinc-500 font-bold tracking-widest uppercase flex items-center gap-1"><i data-lucide="grip-horizontal" class="w-3 h-3"></i> FPS</span>
+            <div id="stats-container" class="absolute z-30 flex flex-col gap-2 w-[150px] h-fit opacity-75 hover:opacity-100 transition-opacity bg-white/80 dark:bg-[#161616]/60 backdrop-blur-md p-3 rounded-lg shadow-lg shadow-slate-300 dark:shadow-black/50 border border-black/10 dark:border-white/10 cursor-move" style="left: 20px; top: calc(100% - 200px);">
+                <div id="stats-drag-handle" class="flex justify-between items-end border-b border-black/5 dark:border-white/5 pb-2 mb-1">
+                    <span class="text-[10px] text-slate-500 dark:text-zinc-500 font-bold flex items-center gap-1"><i data-lucide="grip-horizontal" class="w-3 h-3"></i> FPS</span>
                     <span id="stat-fps" class="text-green-400 font-mono font-bold text-xl drop-shadow-[0_0_5px_rgba(74,222,128,0.3)] leading-none pointer-events-none">0</span>
                 </div>
                     
                     <!-- Line Chart Canvas -->
-                    <canvas id="fps-chart" class="w-full h-10 border border-white/5 bg-[#0a0a0a]/50 rounded mb-1"></canvas>
+                    <canvas id="fps-chart" class="w-full h-10 border border-black/5 dark:border-white/5 bg-slate-100/50 dark:bg-[#0a0a0a]/50 rounded mb-1"></canvas>
                     
                 
                 <div class="flex flex-col gap-1 pointer-events-none">
-                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold mt-1"><span class="text-zinc-500 uppercase tracking-widest">Triangles</span><span id="stat-tris" class="text-blue-400">0</span></div>
-                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-zinc-500 uppercase tracking-widest">Draw Calls</span><span id="stat-calls" class="text-blue-400">0</span></div>
-                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-zinc-500 uppercase tracking-widest">Geometries</span><span id="stat-geom" class="text-blue-400">0</span></div>
-                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-zinc-500 uppercase tracking-widest">Textures</span><span id="stat-tex" class="text-blue-400">0</span></div>
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold mt-1"><span class="text-slate-500 dark:text-zinc-500">Triangles</span><span id="stat-tris" class="text-blue-400">0</span></div>
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-slate-500 dark:text-zinc-500">Draw Calls</span><span id="stat-calls" class="text-blue-400">0</span></div>
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-slate-500 dark:text-zinc-500">Geometries</span><span id="stat-geom" class="text-blue-400">0</span></div>
+                    <div class="flex justify-between items-center gap-4 text-[9px] font-mono font-bold"><span class="text-slate-500 dark:text-zinc-500">Textures</span><span id="stat-tex" class="text-blue-400">0</span></div>
                 </div>
             </div>
             
             <!-- Floating Viewport Tools -->
             <div class="absolute bottom-6 left-1/2 -translate-x-1/2 panel-glass px-5 py-2.5 rounded-full flex items-center gap-5 z-50 shadow-2xl transition-all hover:scale-105 duration-200">
-                <button data-cam="front" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Front View (1)"><i data-lucide="layout-template"></i></button>
-                <button data-cam="side" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Side View (2)"><i data-lucide="columns-2"></i></button>
-                <button data-cam="face" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Face Close-up (3)"><i data-lucide="user-circle"></i></button>
-                <button data-cam="top" class="p-1.5 hover:bg-blue-500/20 rounded-full text-zinc-300 hover:text-blue-400 transition-colors" title="Top View (4)"><i data-lucide="align-vertical-space-around"></i></button>
+                <button data-cam="front" class="p-1.5 hover:bg-blue-500/20 rounded-full text-slate-700 dark:text-zinc-300 hover:text-blue-400 transition-colors" title="Front View (1)"><i data-lucide="layout-template"></i></button>
+                <button data-cam="side" class="p-1.5 hover:bg-blue-500/20 rounded-full text-slate-700 dark:text-zinc-300 hover:text-blue-400 transition-colors" title="Side View (2)"><i data-lucide="columns-2"></i></button>
+                <button data-cam="face" class="p-1.5 hover:bg-blue-500/20 rounded-full text-slate-700 dark:text-zinc-300 hover:text-blue-400 transition-colors" title="Face Close-up (3)"><i data-lucide="user-circle"></i></button>
+                <button data-cam="top" class="p-1.5 hover:bg-blue-500/20 rounded-full text-slate-700 dark:text-zinc-300 hover:text-blue-400 transition-colors" title="Top View (4)"><i data-lucide="align-vertical-space-around"></i></button>
             </div>
 
             <!-- Loading Overlay -->
             <div id="loading-overlay" class="absolute inset-0 bg-[#0a0a0a]/95 backdrop-blur z-150 flex-col items-center justify-center hidden rounded-xl">
                 <i data-lucide="loader-2" class="w-8 h-8 text-blue-500 animate-spin mb-6"></i>
-                <div class="w-64 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                <div class="w-64 h-1 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div id="loading-bar" class="w-0 h-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all ease-out duration-300"></div>
                 </div>
-                <p id="loading-text" class="mt-4 text-[10px] font-bold tracking-[0.2em] text-blue-400 animate-pulse uppercase">Processing Assets...</p>
+                <p id="loading-text" class="mt-4 text-[10px] font-bold tracking-[0.2em] text-blue-400 animate-pulse">Processing Assets...</p>
             </div>
             
             </div> <!-- End Canvas Area -->
 
             <!-- Debug Console (Floating) -->
-            <div class="absolute top-0 left-0 w-full h-6 flex flex-col border-b border-[var(--border-color)] bg-[#050505]/80 backdrop-blur z-40 transition-all duration-300 ease-in-out" id="console-panel">
-                <div class="h-6 shrink-0 w-full flex items-center justify-between px-3 bg-zinc-900/50 border-b border-black/50">
-                    <div class="flex items-center gap-2 text-[8px] font-bold text-zinc-500 uppercase tracking-widest">
+            <div class="absolute top-0 left-0 w-full h-6 flex flex-col border-b border-[var(--border-color)] bg-white/90 dark:bg-[#050505]/80 backdrop-blur z-40 transition-all duration-300 ease-in-out" id="console-panel">
+                <div class="h-6 shrink-0 w-full flex items-center justify-between px-3 bg-slate-100/80 dark:bg-zinc-900/50 border-b border-black/50">
+                    <div class="flex items-center gap-2 text-[8px] font-bold text-slate-500 dark:text-zinc-500">
                         <i data-lucide="terminal" class="w-3 h-3 text-blue-500"></i> Debug Console
                     </div>
-                    <button id="console-toggle-btn" class="flex items-center gap-1 text-[9px] text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded cursor-pointer">
+                    <button id="console-toggle-btn" class="flex items-center gap-1 text-[9px] text-slate-500 dark:text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-2 py-0.5 rounded cursor-pointer">
                         <i data-lucide="chevron-down" class="w-3 h-3 transition-transform" id="console-icon"></i> <span>Open Panel</span>
                     </button>
                 </div>
                 <!-- Console Content Area -->
-                <div class="flex-1 p-2 font-mono text-[9px] overflow-y-auto custom-scroll hidden bg-[#050505]/80 backdrop-blur" id="console-logs" style="height: 120px;"></div>
+                <div class="flex-1 p-2 font-mono text-[9px] overflow-y-auto custom-scroll hidden bg-white/90 dark:bg-[#050505]/80 backdrop-blur" id="console-logs" style="height: 120px;"></div>
             </div>
 
         </div>
@@ -143,10 +167,10 @@
         <!-- Right Panel: Editors -->
         <aside class="w-[25%] xl:w-[20%] min-w-[340px] max-w-[450px] shrink-0 border-l border-[var(--border-color)] bg-[var(--panel-color)] flex flex-col z-20">
             <div class="flex flex-wrap border-b border-[var(--border-color)]" id="right-tabs">
-                <button data-tab="expressions" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider tab-active transition-colors">Face</button>
-                <button data-tab="motion" class="w-[50%] py-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Motion</button>
-                <button data-tab="physics" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Physics</button>
-                <button data-tab="env" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors">Environment</button>
+                <button data-tab="expressions" class="w-[50%] py-3 text-[10px] font-bold tab-active transition-colors">Face</button>
+                <button data-tab="motion" class="w-[50%] py-3 text-[10px] font-bold text-slate-500 dark:text-zinc-500 hover:text-zinc-300 transition-colors">Motion</button>
+                <button data-tab="physics" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold text-slate-500 dark:text-zinc-500 hover:text-zinc-300 transition-colors">Physics</button>
+                <button data-tab="env" class="w-[50%] py-3 border-t border-[var(--border-color)] text-[10px] font-bold text-slate-500 dark:text-zinc-500 hover:text-zinc-300 transition-colors">Environment</button>
             </div>
 
             <div class="flex-1 overflow-y-auto p-5 custom-scroll" id="right-content">
@@ -154,28 +178,28 @@
                 <!-- Expressions -->
                 <div id="tab-expressions" class="space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="mic" class="w-3 h-3"></i> Live Lip-sync</h3>
-                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 shadow-inner">
-                            <p class="text-[10px] text-zinc-400 mb-3">Use microphone to capture phonemes and generate A/I/U/E/O lip sync in real-time.</p>
-                            <button id="mic-toggle" class="w-full py-2 bg-zinc-800 hover:bg-blue-600 border border-white/10 rounded-md text-[11px] font-bold tracking-wider transition-all flex justify-center gap-2 items-center text-zinc-300 hover:text-white hover:border-blue-500">
+                        <h3 class="text-[10px] font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="mic" class="w-3 h-3"></i> Live Lip-sync</h3>
+                        <div class="bg-slate-50 dark:bg-[#111] p-4 rounded-lg border border-black/5 dark:border-white/5 shadow-inner">
+                            <p class="text-[10px] text-slate-500 dark:text-zinc-400 mb-3">Use microphone to capture phonemes and generate A/I/U/E/O lip sync in real-time.</p>
+                            <button id="mic-toggle" class="w-full py-2 bg-slate-100 dark:bg-zinc-800 hover:bg-blue-600 border border-black/10 dark:border-white/10 rounded-md text-[11px] font-bold transition-all flex justify-center gap-2 items-center text-slate-700 dark:text-zinc-300 hover:text-white hover:border-blue-500">
                                 <i data-lucide="mic" class="w-3 h-3"></i> <span id="mic-label">Enable Microphone</span>
                             </button>
-                            <div id="audio-levels" class="h-1 bg-zinc-800 rounded mt-3 hidden"></div>
+                            <div id="audio-levels" class="h-1 bg-slate-100 dark:bg-zinc-800 rounded mt-3 hidden"></div>
                         </div>
                     </section>
                     
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-purple-400 mb-3 flex items-center gap-2"><i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> LookAt Interaction</h3>
-                        <label class="flex items-center justify-between group cursor-pointer bg-[#111] hover:bg-white/5 transition-colors p-3 border border-white/5 rounded-lg">
-                            <span class="text-[11px] text-zinc-300 group-hover:text-white font-medium tracking-wide">Enable Mouse Tracking</span>
-                            <input type="checkbox" id="lookat-toggle" class="w-4 h-4 accent-purple-500 rounded focus:ring-purple-500/30">
+                        <h3 class="text-[10px] font-bold text-purple-400 mb-3 flex items-center gap-2"><i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> LookAt Interaction</h3>
+                        <label class="flex items-center justify-between group cursor-pointer bg-slate-50 dark:bg-[#111] hover:bg-black/5 dark:hover:bg-white/5 transition-colors p-3 border border-black/5 dark:border-white/5 rounded-lg">
+                            <span class="text-[11px] text-slate-700 dark:text-zinc-300 group-hover:text-white font-medium tracking-wide">Enable Mouse Tracking</span>
+                            <input type="checkbox" id="lookat-toggle" checked class="w-4 h-4 accent-purple-500 rounded focus:ring-purple-500/30">
                         </label>
                     </section>
                     
                     <section id="blendshapes-section">
-                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">Blendshape Controls</h3>
-                        <div id="expression-controls" class="bg-[#111] p-4 rounded-lg border border-white/5 shadow-inner min-h-[100px] flex flex-col justify-center gap-1">
-                            <p class="text-[11px] text-zinc-600 italic text-center">No model with expression data loaded yet.</p>
+                        <h3 class="text-[10px] font-bold text-slate-500 dark:text-zinc-500 mb-3">Blendshape Controls</h3>
+                        <div id="expression-controls" class="bg-slate-50 dark:bg-[#111] p-4 rounded-lg border border-black/5 dark:border-white/5 shadow-inner min-h-[100px] flex flex-col justify-center gap-1">
+                            <p class="text-[11px] text-slate-400 dark:text-zinc-600 italic text-center">No model with expression data loaded yet.</p>
                         </div>
                     </section>
                 </div>
@@ -183,29 +207,29 @@
                 <!-- Motion -->
                 <div id="tab-motion" class="hidden space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-orange-400 mb-3 flex items-center gap-2"><i data-lucide="film" class="w-3 h-3"></i> Motion Sequence Player (VRMA)</h3>
-                        <div id="animation-player" class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-4">
-                            <div class="space-y-2 pb-2 border-b border-white/5">
-                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Preset Motion Preview</label>
-                                <button id="btn-idle-anim" class="w-full bg-teal-600 hover:bg-teal-700 border border-teal-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase shadow-lg shadow-teal-500/20 mb-2"><i data-lucide="activity" class="w-3 h-3 inline-block"></i> Idle (with Blink + Breathe)</button>
-                                <select id="anim-preset-select" class="w-full bg-zinc-800 text-[10px] text-zinc-300 rounded outline-none border border-white/5 flex items-center justify-center p-2 cursor-pointer hover:bg-zinc-700">
+                        <h3 class="text-[10px] font-bold text-orange-400 mb-3 flex items-center gap-2"><i data-lucide="film" class="w-3 h-3"></i> Motion Sequence Player (VRMA)</h3>
+                        <div id="animation-player" class="bg-slate-50 dark:bg-[#111] p-4 rounded-lg border border-black/5 dark:border-white/5 space-y-4">
+                            <div class="space-y-2 pb-2 border-b border-black/5 dark:border-white/5">
+                                <label class="text-[9px] text-slate-500 dark:text-zinc-500 font-bold">Preset Motion Preview</label>
+                                <button id="btn-idle-anim" class="w-full bg-teal-600 hover:bg-teal-700 border border-teal-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold shadow-lg shadow-teal-500/20 mb-2"><i data-lucide="activity" class="w-3 h-3 inline-block"></i> Idle (with Blink + Breathe)</button>
+                                <select id="anim-preset-select" class="w-full bg-slate-100 dark:bg-zinc-800 text-[10px] text-slate-700 dark:text-zinc-300 rounded outline-none border border-black/5 dark:border-white/5 flex items-center justify-center p-2 cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700">
                                     <option value="">-- Select Preset Motion --</option>
                                     <!-- Dynamic options will be injected here by main.js -->
                                 </select>
                             </div>
                             <div class="flex items-center justify-between">
-                                <span id="anim-name" class="text-[11px] font-bold text-zinc-300 uppercase truncate" title="No animation loaded">Idle State</span>
+                                <span id="anim-name" class="text-[11px] font-bold text-slate-700 dark:text-zinc-300 truncate" title="No animation loaded">Idle State</span>
                                 <span id="anim-time" class="text-[10px] font-mono text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded">00:00.0</span>
                             </div>
                             <!-- Time Slider -->
-                            <input type="range" id="anim-progress" min="0" max="100" value="0" class="w-full h-1 bg-zinc-800 rounded accent-orange-500 cursor-pointer">
+                            <input type="range" id="anim-progress" min="0" max="100" value="0" class="w-full h-1 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none accent-orange-500 cursor-pointer">
                             
                             <!-- Controls Grid -->
                             <div class="flex items-center gap-2">
-                                <button id="anim-play" class="flex-1 bg-zinc-800 text-orange-400 hover:bg-zinc-700 flex items-center justify-center py-2.5 rounded-md transition-all border border-white/10 group">
+                                <button id="anim-play" class="flex-1 bg-slate-100 dark:bg-zinc-800 text-orange-400 hover:bg-slate-200 dark:hover:bg-zinc-700 flex items-center justify-center py-2.5 rounded-md transition-all border border-black/10 dark:border-white/10 group">
                                     <i data-lucide="play" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
                                 </button>
-                                <select id="anim-speed" class="flex-shrink-0 bg-zinc-800 text-[10px] text-zinc-300 rounded-md outline-none border border-white/5 flex items-center justify-center p-2.5 h-full cursor-pointer hover:bg-zinc-700">
+                                <select id="anim-speed" class="flex-shrink-0 bg-slate-100 dark:bg-zinc-800 text-[10px] text-slate-700 dark:text-zinc-300 rounded-md outline-none border border-black/5 dark:border-white/5 flex items-center justify-center p-2.5 h-full cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700">
                                     <option value="0.25">0.25x</option>
                                     <option value="0.5">0.5x</option>
                                     <option value="1" selected>1.0x</option>
@@ -217,51 +241,51 @@
                     </section>
                     
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="scan-line" class="w-3 h-3"></i> Kinematics (FK/IK) & Pose Presets</h3>
+                        <h3 class="text-[10px] font-bold text-blue-400 mb-3 flex items-center gap-2"><i data-lucide="scan-line" class="w-3 h-3"></i> Kinematics (FK/IK) & Pose Presets</h3>
                         
                         <div class="space-y-4 mb-4">
                             <!-- Custom FK/IK UI -->
-                            <div class="bg-[#111] p-3 rounded-lg border border-white/5 space-y-3">
+                            <div class="bg-slate-50 dark:bg-[#111] p-3 rounded-lg border border-black/5 dark:border-white/5 space-y-3">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Kinematic Mode</span>
-                                    <div class="flex rounded overflow-hidden border border-white/10 text-[10px]" id="kinematics-mode-group">
-                                        <button class="px-3 py-1 bg-white text-black font-bold transition-colors" data-mode="OFF">OFF</button>
-                                        <button class="px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors" data-mode="IK">IK</button>
-                                        <button class="px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors" data-mode="FK">FK</button>
+                                    <span class="text-[10px] text-slate-500 dark:text-zinc-500 font-bold">Kinematic Mode</span>
+                                    <div class="flex rounded overflow-hidden border border-black/10 dark:border-white/10 text-[10px]" id="kinematics-mode-group">
+                                        <button class="px-3 py-1 bg-white text-white dark:text-black font-bold transition-colors" data-mode="OFF">OFF</button>
+                                        <button class="px-3 py-1 bg-slate-50 dark:bg-[#111] text-slate-700 dark:text-zinc-300 font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors" data-mode="IK">IK</button>
+                                        <button class="px-3 py-1 bg-slate-50 dark:bg-[#111] text-slate-700 dark:text-zinc-300 font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors" data-mode="FK">FK</button>
                                     </div>
                                 </div>
-                                <p class="text-[9px] text-zinc-500 italic mb-2" id="kinematics-desc">Select IK or FK to enable bone manipulation.</p>
+                                <p class="text-[9px] text-slate-500 dark:text-zinc-500 italic mb-2" id="kinematics-desc">Select IK or FK to enable bone manipulation.</p>
                                 
-                                <div class="space-y-2 pt-2 border-t border-white/5">
-                                    <div class="flex items-center justify-between text-[9px] text-zinc-400">
+                                <div class="space-y-2 pt-2 border-t border-black/5 dark:border-white/5">
+                                    <div class="flex items-center justify-between text-[9px] text-slate-500 dark:text-zinc-400">
                                         <span>Indicator Radius</span>
                                         <span id="label-indicator-radius">0.015</span>
                                     </div>
-                                    <input type="range" id="slider-indicator-radius" min="0.005" max="0.05" step="0.001" value="0.015" class="w-full accent-blue-500 h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer">
+                                    <input type="range" id="slider-indicator-radius" min="0.005" max="0.05" step="0.001" value="0.015" class="w-full accent-blue-500 h-1 bg-slate-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer">
                                     
-                                    <div class="flex items-center justify-between text-[9px] text-zinc-400">
+                                    <div class="flex items-center justify-between text-[9px] text-slate-500 dark:text-zinc-400">
                                         <span>Indicator Opacity</span>
                                         <span id="label-indicator-opacity">0.8</span>
                                     </div>
-                                    <input type="range" id="slider-indicator-opacity" min="0.1" max="1.0" step="0.1" value="0.8" class="w-full accent-blue-500 h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer">
+                                    <input type="range" id="slider-indicator-opacity" min="0.1" max="1.0" step="0.1" value="0.8" class="w-full accent-blue-500 h-1 bg-slate-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer">
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-2" id="pose-preset-container">
-                                <button class="pose-preset bg-blue-600 hover:bg-blue-700 border border-blue-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold tracking-wider uppercase col-span-2 shadow-lg shadow-blue-500/20" data-pose="t-pose">Standard T-Pose (Rest)</button>
-                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/A-shape.json">A-shape</button>
-                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/Standing.json">Standing</button>
-                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/Double Peace.json">Double Peace</button>
-                                <button class="pose-preset bg-zinc-800 hover:bg-zinc-700 border border-white/5 p-2 rounded-md text-[9px] text-zinc-300 transition-all font-medium uppercase" data-pose="/pose/T-shape.json">T-shape</button>
+                                <button class="pose-preset bg-blue-600 hover:bg-blue-700 border border-blue-400/30 p-2 rounded-md text-[10px] text-white transition-all font-bold col-span-2 shadow-lg shadow-blue-500/20" data-pose="t-pose">Standard T-Pose (Rest)</button>
+                                <button class="pose-preset bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-black/5 dark:border-white/5 p-2 rounded-md text-[9px] text-slate-700 dark:text-zinc-300 transition-all font-medium" data-pose="/pose/A-shape.json">A-shape</button>
+                                <button class="pose-preset bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-black/5 dark:border-white/5 p-2 rounded-md text-[9px] text-slate-700 dark:text-zinc-300 transition-all font-medium" data-pose="/pose/Standing.json">Standing</button>
+                                <button class="pose-preset bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-black/5 dark:border-white/5 p-2 rounded-md text-[9px] text-slate-700 dark:text-zinc-300 transition-all font-medium" data-pose="/pose/Double Peace.json">Double Peace</button>
+                                <button class="pose-preset bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-black/5 dark:border-white/5 p-2 rounded-md text-[9px] text-slate-700 dark:text-zinc-300 transition-all font-medium" data-pose="/pose/T-shape.json">T-shape</button>
                             </div>
                             
-                            <div class="mt-4 pt-4 border-t border-white/5 space-y-2">
-                                <label class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Custom Pose JSON</label>
+                            <div class="mt-4 pt-4 border-t border-black/5 dark:border-white/5 space-y-2">
+                                <label class="text-[9px] text-slate-500 dark:text-zinc-500 font-bold">Custom Pose JSON</label>
                                 <div class="flex gap-2">
-                                    <button id="btn-import-pose" class="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-white/10 p-2 rounded-md justify-center items-center flex gap-1 text-[9px] text-zinc-300 hover:text-white transition-all font-medium">
+                                    <button id="btn-import-pose" class="flex-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-black/10 dark:border-white/10 p-2 rounded-md justify-center items-center flex gap-1 text-[9px] text-slate-700 dark:text-zinc-300 hover:text-white transition-all font-medium">
                                         <i data-lucide="upload" class="w-3 h-3"></i> Import
                                     </button>
-                                    <button id="btn-export-pose" class="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-white/10 p-2 rounded-md justify-center items-center flex gap-1 text-[9px] text-zinc-300 hover:text-white transition-all font-medium">
+                                    <button id="btn-export-pose" class="flex-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-black/10 dark:border-white/10 p-2 rounded-md justify-center items-center flex gap-1 text-[9px] text-slate-700 dark:text-zinc-300 hover:text-white transition-all font-medium">
                                         <i data-lucide="download" class="w-3 h-3"></i> Export
                                     </button>
                                 </div>
@@ -274,31 +298,31 @@
                 <!-- Physics -->
                 <div id="tab-physics" class="hidden space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-green-400 mb-3 flex items-center gap-2"><i data-lucide="wind" class="w-3 h-3"></i> Elasticity & Fluid Dynamics</h3>
-                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-5">
+                        <h3 class="text-[10px] font-bold text-green-400 mb-3 flex items-center gap-2"><i data-lucide="wind" class="w-3 h-3"></i> Elasticity & Fluid Dynamics</h3>
+                        <div class="bg-slate-50 dark:bg-[#111] p-4 rounded-lg border border-black/5 dark:border-white/5 space-y-5">
                             
-                            <label class="flex items-center justify-between text-[11px] group cursor-pointer border-b border-white/5 pb-4">
-                                <span class="group-hover:text-green-400 text-zinc-300 font-medium tracking-wide transition-colors">Enable Collider/Bone X-Ray</span>
+                            <label class="flex items-center justify-between text-[11px] group cursor-pointer border-b border-black/5 dark:border-white/5 pb-4">
+                                <span class="group-hover:text-green-400 text-slate-700 dark:text-zinc-300 font-medium tracking-wide transition-colors">Enable Collider/Bone X-Ray</span>
                                 <input type="checkbox" id="sb-vis-toggle" class="w-4 h-4 accent-green-500 rounded focus:ring-green-500/30">
                             </label>
 
                             <div class="space-y-5 pt-1">
                                 <div class="space-y-2">
-                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Gravity Multiplier</span><span id="val-grav" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
-                                    <input type="range" id="phys-grav" min="0" max="5" step="0.1" value="1.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
+                                    <div class="flex justify-between text-[10px] text-slate-500 dark:text-zinc-400 font-bold"><span>Gravity Multiplier</span><span id="val-grav" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
+                                    <input type="range" id="phys-grav" min="0" max="5" step="0.1" value="1.0" class="w-full h-1.5 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none accent-green-500 cursor-pointer">
                                 </div>
                                 <div class="space-y-2">
-                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Drag Force</span><span id="val-drag" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
-                                    <input type="range" id="phys-drag" min="0.1" max="3" step="0.1" value="1.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
+                                    <div class="flex justify-between text-[10px] text-slate-500 dark:text-zinc-400 font-bold"><span>Drag Force</span><span id="val-drag" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">1.0</span></div>
+                                    <input type="range" id="phys-drag" min="0.1" max="3" step="0.1" value="1.0" class="w-full h-1.5 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none accent-green-500 cursor-pointer">
                                 </div>
                                 <div class="space-y-2">
-                                    <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Wind Field X</span><span id="val-wind" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">0.00</span></div>
-                                    <input type="range" id="phys-wind" min="-1" max="1" step="0.05" value="0.0" class="w-full h-1.5 bg-zinc-800 rounded accent-green-500 cursor-pointer">
+                                    <div class="flex justify-between text-[10px] text-slate-500 dark:text-zinc-400 font-bold"><span>Wind Field X</span><span id="val-wind" class="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded">0.00</span></div>
+                                    <input type="range" id="phys-wind" min="-1" max="1" step="0.05" value="0.0" class="w-full h-1.5 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none accent-green-500 cursor-pointer">
                                 </div>
                             </div>
                             
-                            <div class="bg-zinc-900 border border-zinc-800 rounded p-2 mt-4">
-                                <p class="text-[9px] text-zinc-500 leading-relaxed"><i data-lucide="info" class="w-3 h-3 inline text-zinc-600"></i> Note: This panel multiplies and overrides the VRM's built-in SpringBone parameters in real-time, allowing quick debugging of how skirts and hair respond to force field changes.</p>
+                            <div class="bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded p-2 mt-4">
+                                <p class="text-[9px] text-slate-500 dark:text-zinc-500 leading-relaxed"><i data-lucide="info" class="w-3 h-3 inline text-slate-400 dark:text-zinc-600"></i> Note: This panel multiplies and overrides the VRM's built-in SpringBone parameters in real-time, allowing quick debugging of how skirts and hair respond to force field changes.</p>
                             </div>
                         </div>
                     </section>
@@ -307,44 +331,44 @@
                 <!-- Environment -->
                 <div id="tab-env" class="hidden space-y-6">
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-zinc-500 mb-3">Scene Diagnostics</h3>
-                        <div class="bg-[#111] p-2 rounded-lg border border-white/5">
-                            <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
-                                <span class="text-[11px] text-zinc-300">Grid Floor Reference</span>
+                        <h3 class="text-[10px] font-bold text-slate-500 dark:text-zinc-500 mb-3">Scene Diagnostics</h3>
+                        <div class="bg-slate-50 dark:bg-[#111] p-2 rounded-lg border border-black/5 dark:border-white/5">
+                            <label class="flex items-center justify-between group cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded transition-colors">
+                                <span class="text-[11px] text-slate-700 dark:text-zinc-300">Grid Floor Reference</span>
                                 <input type="checkbox" checked id="grid-toggle" class="w-4 h-4 accent-blue-500 rounded">
                             </label>
-                            <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
-                                <span class="text-[11px] text-zinc-300">World Axes Origin</span>
+                            <label class="flex items-center justify-between group cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded transition-colors">
+                                <span class="text-[11px] text-slate-700 dark:text-zinc-300">World Axes Origin</span>
                                 <input type="checkbox" id="axes-toggle" class="w-4 h-4 accent-blue-500 rounded">
                             </label>
-                            <label class="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 rounded transition-colors">
-                                <span class="text-[11px] text-zinc-300">Engine Native Skeleton</span>
+                            <label class="flex items-center justify-between group cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 p-2 rounded transition-colors">
+                                <span class="text-[11px] text-slate-700 dark:text-zinc-300">Engine Native Skeleton</span>
                                 <input type="checkbox" id="skeleton-toggle" class="w-4 h-4 accent-orange-500 rounded">
                             </label>
                         </div>
                     </section>
                     
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-yellow-500 mb-3 flex items-center gap-2"><i data-lucide="sun" class="w-3 h-3"></i> Lighting Studio</h3>
-                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-5">
+                        <h3 class="text-[10px] font-bold text-yellow-500 mb-3 flex items-center gap-2"><i data-lucide="sun" class="w-3 h-3"></i> Lighting Studio</h3>
+                        <div class="bg-slate-50 dark:bg-[#111] p-4 rounded-lg border border-black/5 dark:border-white/5 space-y-5">
                             <div class="space-y-2">
-                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Ambient Light</span><span id="env-amb-v" class="font-mono text-yellow-500">1.0</span></div>
-                                <input type="range" id="env-amb" min="0" max="3" step="0.05" value="1.0" class="w-full h-1 bg-zinc-800 rounded accent-yellow-500 cursor-pointer">
+                                <div class="flex justify-between text-[10px] text-slate-500 dark:text-zinc-400 font-bold"><span>Ambient Light</span><span id="env-amb-v" class="font-mono text-yellow-500">1.0</span></div>
+                                <input type="range" id="env-amb" min="0" max="3" step="0.05" value="1.0" class="w-full h-1 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none accent-yellow-500 cursor-pointer">
                             </div>
                             <div class="space-y-2">
-                                <div class="flex justify-between text-[10px] text-zinc-400 font-bold"><span>Directional Light</span><span id="env-dir-v" class="font-mono text-yellow-500">1.5</span></div>
-                                <input type="range" id="env-dir" min="0" max="5" step="0.05" value="1.5" class="w-full h-1 bg-zinc-800 rounded accent-yellow-500 cursor-pointer">
+                                <div class="flex justify-between text-[10px] text-slate-500 dark:text-zinc-400 font-bold"><span>Directional Light</span><span id="env-dir-v" class="font-mono text-yellow-500">1.5</span></div>
+                                <input type="range" id="env-dir" min="0" max="5" step="0.05" value="1.5" class="w-full h-1 bg-slate-200 dark:bg-zinc-800 rounded-lg appearance-none accent-yellow-500 cursor-pointer">
                             </div>
                         </div>
                     </section>
 
                     <section>
-                        <h3 class="text-[10px] uppercase font-bold text-pink-400 mb-3 flex items-center gap-2"><i data-lucide="image" class="w-3 h-3"></i> VRAM Pipeline & Background</h3>
-                        <div class="bg-[#111] p-4 rounded-lg border border-white/5 space-y-4">
+                        <h3 class="text-[10px] font-bold text-pink-400 mb-3 flex items-center gap-2"><i data-lucide="image" class="w-3 h-3"></i> VRAM Pipeline & Background</h3>
+                        <div class="bg-slate-50 dark:bg-[#111] p-4 rounded-lg border border-black/5 dark:border-white/5 space-y-4">
                             <div>
-                                <p class="text-[10px] text-zinc-500 mb-2 font-bold">Canvas Clear Color (Background)</p>
+                                <p class="text-[10px] text-slate-500 dark:text-zinc-500 mb-2 font-bold">Canvas Clear Color (Background)</p>
                                 <div class="flex gap-2">
-                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0a0a0a] hover:scale-110 transition-transform flex items-center justify-center text-[10px] text-zinc-400 bg-[radial-gradient(circle_at_center,_transparent_40%,_#333_100%)]" data-bg="transparent" title="Alpha Channel Transparent"></button>
+                                    <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0a0a0a] hover:scale-110 transition-transform flex items-center justify-center text-[10px] text-slate-500 dark:text-zinc-400 bg-[radial-gradient(circle_at_center,_transparent_40%,_#333_100%)]" data-bg="transparent" title="Alpha Channel Transparent"></button>
                                     <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#808080] hover:scale-110 transition-transform shadow shadow-zinc-500/50" data-bg="#808080" title="Gray"></button>
                                     <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#00ff22] hover:scale-110 transition-transform shadow shadow-green-500/50" data-bg="#00ff22" title="Green Screen (100% Pure)"></button>
                                     <button class="w-7 h-7 rounded-full border border-zinc-600 bg-[#0000ff] hover:scale-110 transition-transform shadow shadow-blue-500/50" data-bg="#0000ff" title="Blue Screen (100% Pure)"></button>

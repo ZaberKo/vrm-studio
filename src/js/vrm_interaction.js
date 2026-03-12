@@ -21,6 +21,15 @@ export function setupUIHandlers(globals) {
 
   setupDraggableStats();
 
+  // Theme Toggle
+  const themeToggle = document.getElementById("theme-toggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+  }
+
   // Console Toggle
   const consoleBtn = document.getElementById("console-toggle-btn");
   const consolePanel = document.getElementById("console-panel");
@@ -195,16 +204,22 @@ export function setupUIHandlers(globals) {
   });
 
   // Lighting
-  document.getElementById("env-amb").oninput = (e) => {
+  const dirLightInput = document.getElementById("env-dir");
+  const ambLightInput = document.getElementById("env-amb");
+  ambLightInput.oninput = (e) => {
     const v = parseFloat(e.target.value);
     globals.ambientLight.intensity = v;
     document.getElementById("env-amb-v").innerText = v.toFixed(2);
   };
-  document.getElementById("env-dir").oninput = (e) => {
+  dirLightInput.oninput = (e) => {
     const v = parseFloat(e.target.value);
     globals.dirLight.intensity = v;
     document.getElementById("env-dir-v").innerText = v.toFixed(2);
   };
+  
+  // Set initial lighting based on HTML default
+  globals.ambientLight.intensity = parseFloat(ambLightInput.value);
+  globals.dirLight.intensity = parseFloat(dirLightInput.value);
 
   // Screenshots
   document.getElementById("screenshot-btn").onclick = () => {
@@ -614,7 +629,7 @@ function updateKinematicsUIState(disabled) {
           "px-3 py-1 bg-zinc-700 text-white font-bold transition-colors";
       } else {
         btn.className =
-          "px-3 py-1 bg-[#111] text-zinc-500 font-bold transition-colors";
+          "px-3 py-1 bg-slate-50 dark:bg-[#111] text-slate-500 dark:text-zinc-500 font-bold transition-colors";
       }
     } else {
       btn.style.opacity = "1";
@@ -626,7 +641,7 @@ function updateKinematicsUIState(disabled) {
       if (btn.dataset.mode === "OFF") {
         btn.className = "px-3 py-1 bg-blue-600 text-white font-bold transition-colors";
       } else {
-        btn.className = "px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors";
+        btn.className = "px-3 py-1 bg-slate-50 dark:bg-[#111] text-slate-700 dark:text-zinc-300 font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors";
       }
     }
   });

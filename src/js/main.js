@@ -324,7 +324,7 @@ async function init() {
   });
 
   animate();
-  globals.log("VRM Engine V2 Initialized Successfully.", "green");
+  globals.log("VRM Studio Initialized Successfully.", "green");
 }
 
 function animate() {

@@ -363,17 +363,6 @@ function animate() {
         if (root.visible) {
           root.children.forEach((helper) => {
             if (helper.update) helper.update();
-            helper.traverse((child) => {
-              if (child.isMesh || child.isLine || child.isLineSegments) {
-                if (child.material) {
-                  child.material.depthTest = false;
-                  child.material.depthWrite = true;
-                  child.material.transparent = true;
-                  child.material.opacity = 0.8;
-                  child.renderOrder = 9999;
-                }
-              }
-            });
           });
         }
       });

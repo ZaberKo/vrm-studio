@@ -125,6 +125,19 @@ export async function loadVRM(url, scene, globals, filename = null) {
         helperRoot.add(new VRMSpringBoneJointHelper(joint));
       });
 
+      // Configure helper transparent materials exactly once
+      helperRoot.traverse((child) => {
+        if (child.isMesh || child.isLine || child.isLineSegments) {
+          if (child.material) {
+            child.material.depthTest = false;
+            child.material.depthWrite = true;
+            child.material.transparent = true;
+            child.material.opacity = 0.8;
+            child.renderOrder = 9999;
+          }
+        }
+      });
+
       scene.add(helperRoot);
       globals.springBoneVisualizerRoots.push(helperRoot);
     }

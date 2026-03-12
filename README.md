@@ -84,7 +84,12 @@ node scripts/fix_poses.js
 - **Icons**: [Lucide](https://lucide.dev/)
 
 ## 📜 License
-This project is licensed under the ISC License.
+This project is licensed under the [MIT License](LICENSE).
+
+## 🙌 Acknowledgements
+A special thanks to the creators of the VRMA animations included in these projects:
+- [vrm-viewer (tk256ailab)](https://github.com/tk256ailab/vrm-viewer)
+- [BOOTH Item 5512385](https://booth.pm/ja/items/5512385)
 
 ---
 *Created with ❤️ for the VRM Community.*

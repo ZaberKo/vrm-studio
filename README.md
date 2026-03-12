@@ -2,6 +2,8 @@
 
 A high-performance, web-based VRM viewer and utility suite designed for 3D humanoid avatars. VRM Studio provides a professional-grade interface for visualizing, posing, and debugging VRM models with real-time feedback.
 
+👉 **[Live Demo available here](https://zaberko.github.io/vrm_studio/)**
+
 ![VRM Studio Interface](https://raw.githubusercontent.com/vrm-c/vrm-specification/master/vrm.png) *(Placeholder image reminder: Replace with actual screenshot)*
 
 ## ✨ Key Features

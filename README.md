@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./public/vrm-studio-logo.webp" alt="VRM Studio Logo" width="200" />
+</p>
+
 # VRM Studio
 
 A high-performance, web-based VRM viewer and utility suite designed for 3D humanoid avatars. VRM Studio provides a professional-grade interface for visualizing, posing, and debugging VRM models with real-time feedback.

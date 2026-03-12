@@ -88,12 +88,15 @@ export function setupUIHandlers(globals) {
 
       if (ext === "vrm") {
         import("./vrm_loader.js").then((m) =>
-          m.loadVRM(url, globals.scene, globals),
+          m.loadVRM(url, globals.scene, globals).finally(() => URL.revokeObjectURL(url)),
         );
       } else if (ext === "vrma" || ext === "glb" || ext === "gltf") {
-        import("./vrm_loader.js").then((m) => m.loadVRMA(url, globals));
+        import("./vrm_loader.js").then((m) => 
+          m.loadVRMA(url, globals).finally(() => URL.revokeObjectURL(url))
+        );
       } else {
         globals.log("Unsupported file type: " + ext, "red");
+        URL.revokeObjectURL(url);
       }
     }
   });
@@ -126,10 +129,13 @@ export function setupUIHandlers(globals) {
     const ext = file.name.split(".").pop().toLowerCase();
     if (ext === "vrm")
       import("./vrm_loader.js").then((m) =>
-        m.loadVRM(url, globals.scene, globals, file.name),
+        m.loadVRM(url, globals.scene, globals, file.name).finally(() => URL.revokeObjectURL(url)),
       );
     else if (ext === "vrma" || ext === "glb" || ext === "gltf")
-      import("./vrm_loader.js").then((m) => m.loadVRMA(url, globals));
+      import("./vrm_loader.js").then((m) => 
+        m.loadVRMA(url, globals).finally(() => URL.revokeObjectURL(url))
+      );
+    else URL.revokeObjectURL(url);
   };
 
   // Camera Views
@@ -206,20 +212,30 @@ export function setupUIHandlers(globals) {
   // Lighting
   const dirLightInput = document.getElementById("env-dir");
   const ambLightInput = document.getElementById("env-amb");
+
   ambLightInput.oninput = (e) => {
     const v = parseFloat(e.target.value);
-    globals.ambientLight.intensity = v;
     document.getElementById("env-amb-v").innerText = v.toFixed(2);
+    
+    if (globals.ambientLight) {
+      globals.ambientLight.intensity = Math.PI * (v + 0.01);
+    }
   };
+
   dirLightInput.oninput = (e) => {
     const v = parseFloat(e.target.value);
-    globals.dirLight.intensity = v;
     document.getElementById("env-dir-v").innerText = v.toFixed(2);
+    
+    if (globals.dirLight) {
+      globals.dirLight.intensity = Math.PI * v;
+    }
   };
   
   // Set initial lighting based on HTML default
-  globals.ambientLight.intensity = parseFloat(ambLightInput.value);
-  globals.dirLight.intensity = parseFloat(dirLightInput.value);
+  setTimeout(() => {
+    ambLightInput.oninput({ target: ambLightInput });
+    dirLightInput.oninput({ target: dirLightInput });
+  }, 500);
 
   // Screenshots
   document.getElementById("screenshot-btn").onclick = () => {

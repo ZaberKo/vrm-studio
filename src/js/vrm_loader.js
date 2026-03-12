@@ -23,6 +23,11 @@ export async function loadVRM(url, scene, globals, filename = null) {
   loadingText.innerText = "LOADING VRM MODEL";
 
   if (globals.currentVRM) {
+    if (globals.vrmControl) {
+      globals.vrmControl.deselectBone();
+      globals.vrmControl.clearHelpers();
+    }
+    
     scene.remove(globals.currentVRM.scene);
     VRMUtils.deepDispose(globals.currentVRM.scene);
     if (globals.mixer) {
@@ -101,7 +106,10 @@ export async function loadVRM(url, scene, globals, filename = null) {
       globals.springBoneVisualizerRoots &&
       globals.springBoneVisualizerRoots.length > 0
     ) {
-      globals.springBoneVisualizerRoots.forEach((r) => scene.remove(r));
+      globals.springBoneVisualizerRoots.forEach((r) => {
+        scene.remove(r);
+        VRMUtils.deepDispose(r);
+      });
     }
     globals.springBoneVisualizerRoots = [];
 
@@ -121,7 +129,11 @@ export async function loadVRM(url, scene, globals, filename = null) {
       globals.springBoneVisualizerRoots.push(helperRoot);
     }
 
-    if (globals.skeletonHelper) scene.remove(globals.skeletonHelper);
+    if (globals.skeletonHelper) {
+      scene.remove(globals.skeletonHelper);
+      globals.skeletonHelper.geometry?.dispose();
+      globals.skeletonHelper.material?.dispose();
+    }
     globals.skeletonHelper = new THREE.SkeletonHelper(vrm.scene);
     globals.skeletonHelper.visible =
       document.getElementById("skeleton-toggle").checked;
@@ -167,6 +179,13 @@ export async function loadVRMA(url, globals) {
   try {
     const gltf = await loader.loadAsync(url);
     const vrmAnimations = gltf.userData.vrmAnimations;
+
+    // A VRMA file is still a GLTF; it may contain unused meshes/materials.
+    // We must deeply dispose of its scene immediately to prevent GPU memory leaks 
+    // since we only care about the extracted animation data.
+    if (gltf.scene) {
+      VRMUtils.deepDispose(gltf.scene);
+    }
 
     if (vrmAnimations && vrmAnimations.length > 0) {
       if (globals.mixer) globals.mixer.stopAllAction();

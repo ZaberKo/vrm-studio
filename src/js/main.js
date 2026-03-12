@@ -191,7 +191,9 @@ const globals = {
     const windSlider = document.getElementById("phys-wind");
 
     const updatePhysics = () => {
-      if (!vrm.springBoneManager) return;
+      // three-vrm 3.5 uses springBoneManager.springs which contain joints
+      if (!vrm.springBoneManager || !vrm.springBoneManager.springs) return;
+      
       const gravMult = parseFloat(gravSlider.value);
       const dragMult = parseFloat(dragSlider.value);
       const windX = parseFloat(windSlider.value);
@@ -200,25 +202,31 @@ const globals = {
       document.getElementById("val-drag").innerText = dragMult.toFixed(1);
       document.getElementById("val-wind").innerText = windX.toFixed(2);
 
-      // Override physics parameters dynamically based on defaults + multipliers
-      vrm.springBoneManager.joints.forEach((bone) => {
-        if (bone.settings) {
-          // Calculate mapped powers based on original values
-          bone.settings.gravityPower =
-            (bone.settings.originalGravityPower ||
-              bone.settings.gravityPower ||
-              0) * gravMult;
-          bone.settings.dragForce =
-            (bone.settings.originalDragForce ||
-              bone.settings.dragForce ||
-              0.4) * dragMult;
-          if (!bone.settings.originalGravityPower) {
-            bone.settings.originalGravityPower = bone.settings.gravityPower;
+      vrm.springBoneManager.springs.forEach((spring) => {
+        spring.joints.forEach((joint) => {
+          if (!joint.settings) return;
+          
+          if (joint.settings.originalGravityPower === undefined) {
+             joint.settings.originalGravityPower = joint.settings.gravityPower;
           }
-          if (!bone.settings.originalDragForce) {
-            bone.settings.originalDragForce = bone.settings.dragForce;
+          if (joint.settings.originalDragForce === undefined) {
+             joint.settings.originalDragForce = joint.settings.dragForce;
           }
-        }
+          if (joint.settings.originalGravityDir === undefined) {
+             joint.settings.originalGravityDir = joint.settings.gravityDir.clone();
+          }
+
+          // Fallback to a base gravity of 0.5 if original was 0, to make gravity multiplier actually work
+          const baseGravity = joint.settings.originalGravityPower === 0 ? 0.5 : joint.settings.originalGravityPower;
+          joint.settings.gravityPower = baseGravity * gravMult;
+          
+          joint.settings.dragForce = joint.settings.originalDragForce * dragMult;
+          
+          // Apply horizontal wind to the gravityDir vector relative to its original direction
+          joint.settings.gravityDir.copy(joint.settings.originalGravityDir);
+          joint.settings.gravityDir.x += windX;
+          joint.settings.gravityDir.normalize();
+        });
       });
     };
 

@@ -323,12 +323,11 @@ async function init() {
     globals.renderer.setSize(viewport.clientWidth, viewport.clientHeight);
   });
 
-  animate();
+  globals.renderer.setAnimationLoop(animate);
   globals.log("VRM Studio Initialized Successfully.", "green");
 }
 
 function animate() {
-  requestAnimationFrame(animate);
   globals.clock.update();
   const delta = globals.clock.getDelta();
 

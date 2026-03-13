@@ -11,6 +11,7 @@ import { MToonNodeMaterial } from "@pixiv/three-vrm/nodes";
 import {
   VRMAnimationLoaderPlugin,
   createVRMAnimationClip,
+  VRMLookAtQuaternionProxy,
 } from "@pixiv/three-vrm-animation";
 import { migrateVRM } from "./vrm_migrator.js";
 
@@ -92,6 +93,10 @@ export async function loadVRM(url, scene, globals, filename = null) {
     // Connect the persistent LookAt Object3D to the newly loaded VRM
     if (vrm.lookAt) {
       vrm.lookAt.target = globals.lookAtTarget;
+      
+      const lookAtQuatProxy = new VRMLookAtQuaternionProxy(vrm.lookAt);
+      lookAtQuatProxy.name = "VRMLookAtQuaternionProxy";
+      vrm.scene.add(lookAtQuatProxy);
     }
 
     scene.add(vrm.scene);
@@ -152,6 +157,9 @@ export async function loadVRM(url, scene, globals, filename = null) {
       document.getElementById("skeleton-toggle").checked;
     scene.add(globals.skeletonHelper);
 
+    loadingText.innerText = "COMPILING SHADERS...";
+    await globals.renderer.compileAsync(scene, globals.camera);
+
     document
       .getElementById("status-dot")
       .classList.replace("bg-red-500", "bg-green-500");
@@ -206,6 +214,10 @@ export async function loadVRMA(url, globals, filename = null) {
 
       const clip = createVRMAnimationClip(vrmAnimations[0], globals.currentVRM);
       globals.currentAction = globals.mixer.clipAction(clip);
+      
+      document.getElementById("loading-text").innerText = "COMPILING SHADERS...";
+      await globals.renderer.compileAsync(globals.scene, globals.camera);
+      
       globals.currentAction.play();
 
       const displayName = filename || (url.includes('blob:') ? 'Custom Animation' : url.split("/").pop());

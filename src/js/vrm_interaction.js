@@ -358,7 +358,7 @@ export function setupUIHandlers(globals) {
             "flex-1 bg-orange-600 text-white flex items-center justify-center py-2.5 rounded-md transition-all border border-orange-500 shadow-lg shadow-orange-500/30 group";
         } else {
           playBtn.className =
-            "flex-1 bg-zinc-800 text-orange-400 hover:bg-zinc-700 flex items-center justify-center py-2.5 rounded-md transition-all border border-white/10 group";
+            "flex-1 bg-slate-100 dark:bg-zinc-800 text-orange-400 hover:bg-slate-200 dark:hover:bg-zinc-700 flex items-center justify-center py-2.5 rounded-md transition-all border border-black/10 dark:border-white/10 group";
         }
 
         playBtn.innerHTML = `<i data-lucide="${isPlaying ? "pause" : "play"}" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>`;
@@ -680,7 +680,7 @@ function updateKinematicsUIState(disabled) {
       // Ensure OFF is visually active if we forced mode to OFF
       if (btn.dataset.mode === "OFF") {
         btn.className =
-          "px-3 py-1 bg-zinc-700 text-white font-bold transition-colors";
+          "px-3 py-1 bg-slate-300 dark:bg-zinc-700 text-slate-500 dark:text-white font-bold transition-colors";
       } else {
         btn.className =
           "px-3 py-1 bg-slate-50 dark:bg-[#111] text-slate-500 dark:text-zinc-500 font-bold transition-colors";
@@ -707,7 +707,7 @@ function updateKinematicsUIState(disabled) {
       : "Select IK or FK to enable bone manipulation.";
     desc.className = disabled
       ? "text-[9px] text-orange-400 font-bold animate-pulse"
-      : "text-[9px] text-zinc-500 italic";
+      : "text-[9px] text-slate-500 dark:text-zinc-500 italic";
   }
 }
 

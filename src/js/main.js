@@ -307,7 +307,7 @@ async function init() {
       // Update active styling
       modeButtons.forEach((b) => {
         b.className =
-          "px-3 py-1 bg-[#111] text-zinc-300 font-bold hover:bg-white/10 transition-colors";
+          "px-3 py-1 bg-slate-50 dark:bg-[#111] text-slate-700 dark:text-zinc-300 font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors";
       });
       e.target.className =
         "px-3 py-1 bg-blue-600 text-white font-bold transition-colors";

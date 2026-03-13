@@ -95,5 +95,8 @@ A special thanks to the creators of the VRMA animations included in these projec
 - [vrm-viewer (tk256ailab)](https://github.com/tk256ailab/vrm-viewer)
 - [BOOTH Item 5512385](https://booth.pm/ja/items/5512385)
 
+Our VRM 0.0 to 1.0 dynamic migration logic was partially inspired by the implementation in:
+- [UniVRM](https://github.com/vrm-c/UniVRM)
+
 ---
 *Created with ❤️ for the VRM Community.*

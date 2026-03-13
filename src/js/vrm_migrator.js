@@ -359,8 +359,8 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
       vrm1.meta.avatarPermission = "onlySeparatelyLicensedPerson";
     }
 
-    if (vrm0.meta.texture !== undefined) {
-      vrm1.meta.thumbnailImage = vrm0.meta.texture;
+    if (vrm0.meta.texture !== undefined && json.textures && json.textures[vrm0.meta.texture]) {
+      vrm1.meta.thumbnailImage = json.textures[vrm0.meta.texture].source;
     }
   }
 
@@ -382,6 +382,7 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
       angry: "angry",
       sorrow: "sad",
       fun: "relaxed",
+      surprised: "surprised",
       a: "aa",
       i: "ih",
       u: "ou",
@@ -410,18 +411,91 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
         }));
       }
 
+      let materialColorBinds = [];
+      let textureTransformBinds = [];
+      
+      if (group.materialValues && json.materials) {
+        group.materialValues.forEach(mv => {
+          const matIdx = json.materials.findIndex(m => m.name === mv.materialName);
+          if (matIdx === -1) return;
+          
+          if (mv.propertyName === "_MainTex_ST" || mv.propertyName === "_MainTex_ST_S" || mv.propertyName === "_MainTex_ST_T") {
+            const scale = mv.targetValue.length >= 2 ? [mv.targetValue[0], mv.targetValue[1]] : [1, 1];
+            const offset = mv.targetValue.length >= 4 ? [mv.targetValue[2], mv.targetValue[3]] : [0, 0];
+            
+            // UniVRM has specific vertical flip offset logic, but for direct translation mapping we can rely on spec values.
+            // VRM 0.0 offsets are typically standard. If UniGLTF does VerticalFlipScaleOffset, it flips Y.
+            // But VRM 1.0 KHR_texture_transform is standard glTF space (top-left origin).
+            
+            let scaleY = scale[1];
+            let offsetY = offset[1];
+            
+            if (mv.propertyName === "_MainTex_ST_S") {
+               scaleY = 1.0;
+               offsetY = 0.0;
+            } else if (mv.propertyName === "_MainTex_ST_T") {
+               scale[0] = 1.0;
+               offset[0] = 0.0;
+            }
+            
+            // Spec conversion: ST -> KHR_texture_transform
+            // offset.y = 1.0 - scale.y - ST_Offset.y  (Assuming base is Unity bottom-left to glTF top-left)
+            offsetY = 1.0 - scaleY - offsetY;
+            
+            if (!textureTransformBinds.find(b => b.material === matIdx)) {
+              textureTransformBinds.push({
+                material: matIdx,
+                scale: [scale[0], scaleY],
+                offset: [offset[0], offsetY]
+              });
+            }
+          } else {
+            const propTypeMap = {
+              "_Color": "color",
+              "_EmissionColor": "emissionColor",
+              "_RimColor": "rimColor",
+              "_OutlineColor": "outlineColor",
+              "_ShadeColor": "shadeColor"
+            };
+            
+            const type = propTypeMap[mv.propertyName];
+            if (type) {
+              const targetValue = [
+                mv.targetValue[0] || 0,
+                mv.targetValue[1] || 0,
+                mv.targetValue[2] || 0,
+                mv.targetValue[3] !== undefined ? mv.targetValue[3] : 1
+              ];
+              
+              materialColorBinds.push({
+                material: matIdx,
+                type: type,
+                targetValue: targetValue
+              });
+            }
+          }
+        });
+      }
+
       let expData = {
         isBinary: group.isBinary || false,
         overrideBlink: "none",
         overrideLookAt: "none",
         overrideMouth: "none",
-        morphTargetBinds: morphTargetBinds.length > 0 ? morphTargetBinds : undefined
+        morphTargetBinds: morphTargetBinds.length > 0 ? morphTargetBinds : undefined,
+        materialColorBinds: materialColorBinds.length > 0 ? materialColorBinds : undefined,
+        textureTransformBinds: textureTransformBinds.length > 0 ? textureTransformBinds : undefined
       };
 
       if (presetName && presetMap[presetName.toLowerCase()]) {
         vrm1.expressions.preset[presetMap[presetName.toLowerCase()]] = expData;
       } else {
-        vrm1.expressions.custom[name] = expData;
+        // VRM 0.0 quirks: If presetName is "unknown" but name matches a preset (like "joy"), fallback 
+        if (presetName && presetName.toLowerCase() === "unknown" && name && presetMap[name.toLowerCase()]) {
+           vrm1.expressions.preset[presetMap[name.toLowerCase()]] = expData;
+        } else {
+           vrm1.expressions.custom[name] = expData;
+        }
       }
     }
   }
@@ -498,19 +572,86 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
         if (!bg.bones || bg.bones.length === 0) return;
         
         // VRM 0.0 "bones" were root joints. Split each root into a separate 1.0 "spring".
-        bg.bones.forEach((boneNodeIdx, bIdx) => {
-          vrmcSpringBone.springs.push({
-            name: (bg.comment || `Spring_${idx}`) + (bg.bones.length > 1 ? `_${bIdx}` : ''),
-            joints: [{
-              node: boneNodeIdx,
+        // VRM 1.0 requires an explicit joint array containing all descendants, plus an artificial tail of 7cm for the leaf nodes.
+        const createJointsRecursive = (nodeIdx, level, currentSpring) => {
+          if (!currentSpring && level > 0) {
+            currentSpring = {
+              name: (bg.comment || `Spring_${idx}`),
+              joints: [],
+              colliderGroups: bg.colliderGroups || []
+            };
+            vrmcSpringBone.springs.push(currentSpring);
+          }
+          
+          if (currentSpring) {
+            currentSpring.joints.push({
+              node: nodeIdx,
               stiffness: bg.stiffiness || 1.0,
               gravityPower: bg.gravityPower || 0,
               gravityDir: bg.gravityDir ? [bg.gravityDir.x || 0, bg.gravityDir.y || -1, bg.gravityDir.z || 0] : [0, -1, 0],
               dragForce: bg.dragForce || 0.4,
               hitRadius: bg.hitRadius || 0.02
-            }],
+            });
+          }
+          
+          const gltfNode = json.nodes[nodeIdx];
+          if (gltfNode && gltfNode.children && gltfNode.children.length > 0) {
+            for (let i = 0; i < gltfNode.children.length; ++i) {
+              const childIdx = gltfNode.children[i];
+              // First child continues on the same spring chain. Subsequent children branch into new chains.
+              if (i === 0) {
+                createJointsRecursive(childIdx, level + 1, currentSpring);
+              } else {
+                createJointsRecursive(childIdx, 0, null);
+              }
+            }
+          } else {
+            // Leaf node. Append a 7cm tail to simulate VRM 0.0 physics.
+            if (currentSpring && currentSpring.joints.length > 0) {
+              const leafNode = json.nodes[nodeIdx];
+              const leafName = leafNode.name || "tail";
+              
+              // Calculate 7cm delta based on node's local translation if available, otherwise default to -0.07 on Y.
+              let tx = 0, ty = -0.07, tz = 0;
+              if (leafNode.translation) {
+                const vx = leafNode.translation[0] || 0;
+                const vy = leafNode.translation[1] || 0;
+                const vz = leafNode.translation[2] || 0;
+                const len = Math.sqrt(vx*vx + vy*vy + vz*vz);
+                if (len > 0.0001) {
+                  tx = (vx / len) * 0.07;
+                  ty = (vy / len) * 0.07;
+                  tz = (vz / len) * 0.07;
+                }
+              }
+
+              const tailNode = {
+                name: leafName + "_end",
+                translation: [tx, ty, tz]
+              };
+              
+              const tailIdx = json.nodes.length;
+              json.nodes.push(tailNode);
+              
+              // Add children array to original leaf node so it links to the tail.
+              leafNode.children = [tailIdx];
+              
+              // Tail joints in VRM 1.0 SpringBones only contain the node reference.
+              currentSpring.joints.push({
+                node: tailIdx
+              });
+            }
+          }
+        };
+
+        bg.bones.forEach((boneNodeIdx, bIdx) => {
+          const spring = {
+            name: (bg.comment || `Spring_${idx}`) + (bg.bones.length > 1 ? `_${bIdx}` : ''),
+            joints: [],
             colliderGroups: bg.colliderGroups || []
-          });
+          };
+          vrmcSpringBone.springs.push(spring);
+          createJointsRecursive(boneNodeIdx, 1, spring);
         });
       });
     }

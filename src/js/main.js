@@ -169,42 +169,68 @@ const globals = {
     document.getElementById("stat-tex").innerText = texCount;
   },
 
-  initPhysics: function (vrm) {
+  setupPhysicsUI: function () {
     // VRM SpringBone visualization toggler
     const visToggle = document.getElementById("sb-vis-toggle");
-    visToggle.onchange = (e) => {
-      const on = e.target.checked;
-      if (globals.springBoneVisualizerRoots) {
-        globals.springBoneVisualizerRoots.forEach((root) => {
-          root.visible = on;
-        });
-        globals.log(
-          `SpringBone visualizer ${on ? "Enabled" : "Disabled"}`,
-          "purple",
-        );
-      }
-    };
+    if (visToggle) {
+      visToggle.onchange = (e) => {
+        const on = e.target.checked;
+        if (globals.springBoneVisualizerRoots) {
+          globals.springBoneVisualizerRoots.forEach((root) => {
+            root.visible = on;
+          });
+          globals.log(
+            `SpringBone visualizer ${on ? "Enabled" : "Disabled"}`,
+            "purple",
+          );
+        }
+      };
+    }
 
     // Sliders
     const gravSlider = document.getElementById("phys-grav");
     const dragSlider = document.getElementById("phys-drag");
-    const windSlider = document.getElementById("phys-wind");
+    const windStrengthSlider = document.getElementById("phys-wind-strength");
+    const windDirSlider = document.getElementById("phys-wind-dir");
+
+    const windGustsToggle = document.getElementById("phys-wind-gusts");
+
+    globals.physicsParams = { gravMult: 1, dragMult: 1, windStrength: 0, windDir: 0, gusts: true };
 
     const updatePhysics = () => {
-      // three-vrm 3.5 uses springBoneManager.springs which contain joints
-      if (!vrm.springBoneManager || !vrm.springBoneManager.springs) return;
-      
-      const gravMult = parseFloat(gravSlider.value);
-      const dragMult = parseFloat(dragSlider.value);
-      const windX = parseFloat(windSlider.value);
+      globals.physicsParams.gravMult = parseFloat(gravSlider.value);
+      globals.physicsParams.dragMult = parseFloat(dragSlider.value);
+      globals.physicsParams.windStrength = parseFloat(windStrengthSlider.value);
+      globals.physicsParams.windDir = parseFloat(windDirSlider.value);
+      globals.physicsParams.gusts = windGustsToggle ? windGustsToggle.checked : true;
 
-      document.getElementById("val-grav").innerText = gravMult.toFixed(1);
-      document.getElementById("val-drag").innerText = dragMult.toFixed(1);
-      document.getElementById("val-wind").innerText = windX.toFixed(2);
+      document.getElementById("val-grav").innerText = globals.physicsParams.gravMult.toFixed(1);
+      document.getElementById("val-drag").innerText = globals.physicsParams.dragMult.toFixed(1);
+      document.getElementById("val-wind-strength").innerText = globals.physicsParams.windStrength.toFixed(1);
+      document.getElementById("val-wind-dir").innerText = Math.round(globals.physicsParams.windDir) + "°";
+    };
 
-      vrm.springBoneManager.springs.forEach((spring) => {
-        spring.joints.forEach((joint) => {
-          if (!joint.settings) return;
+    globals.updateSpringBones = (time) => {
+      const vrm = globals.currentVRM;
+      if (!vrm || !vrm.springBoneManager || !vrm.springBoneManager.joints) return;
+      if (!globals.physicsParams) return;
+
+      const p = globals.physicsParams;
+      let currentWindStrength = p.windStrength;
+      let currentWindDir = p.windDir;
+
+      // Apply dynamic gusts if enabled and there's wind
+      if (p.gusts && p.windStrength > 0) {
+        // Multi-frequency noise for natural gust amplitude
+        const gustNoise = (Math.sin(time * 1.5) + Math.sin(time * 0.7) * 0.5) * 0.4;
+        currentWindStrength = Math.max(0, p.windStrength * (1.0 + gustNoise));
+        
+        // Slight directional swaying (±10 degrees)
+        currentWindDir += Math.sin(time * 0.9) * 10;
+      }
+
+      vrm.springBoneManager.joints.forEach((joint) => {
+        if (!joint.settings) return;
           
           if (joint.settings.originalGravityPower === undefined) {
              joint.settings.originalGravityPower = joint.settings.gravityPower;
@@ -216,23 +242,77 @@ const globals = {
              joint.settings.originalGravityDir = joint.settings.gravityDir.clone();
           }
 
-          // Fallback to a base gravity of 0.5 if original was 0, to make gravity multiplier actually work
           const baseGravity = joint.settings.originalGravityPower === 0 ? 0.5 : joint.settings.originalGravityPower;
-          joint.settings.gravityPower = baseGravity * gravMult;
+          joint.settings.gravityPower = baseGravity * p.gravMult;
+          joint.settings.dragForce = joint.settings.originalDragForce * p.dragMult;
           
-          joint.settings.dragForce = joint.settings.originalDragForce * dragMult;
-          
-          // Apply horizontal wind to the gravityDir vector relative to its original direction
           joint.settings.gravityDir.copy(joint.settings.originalGravityDir);
-          joint.settings.gravityDir.x += windX;
+          
+          if (currentWindStrength > 0) {
+            const windRad = currentWindDir * Math.PI / 180;
+            const wX = Math.sin(windRad) * currentWindStrength;
+            const wZ = -Math.cos(windRad) * currentWindStrength; 
+            
+            joint.settings.gravityDir.x += wX;
+            joint.settings.gravityDir.z += wZ;
+          }
           joint.settings.gravityDir.normalize();
         });
-      });
+    };
+    
+    // Expose for external calling after model loads
+    globals.applyPhysics = updatePhysics;
+
+    if (gravSlider) gravSlider.oninput = updatePhysics;
+    if (dragSlider) dragSlider.oninput = updatePhysics;
+    if (windStrengthSlider) windStrengthSlider.oninput = updatePhysics;
+    if (windDirSlider) windDirSlider.oninput = updatePhysics;
+    if (windGustsToggle) windGustsToggle.onchange = updatePhysics;
+    
+    // Wind direction circular dial logic
+    const windDial = document.getElementById("phys-wind-dial");
+    const windDialRotator = document.getElementById("phys-wind-dial-rotator");
+    if (!windDial || !windDialRotator) return;
+    
+    let isDraggingDial = false;
+
+    const updateWindDial = (e) => {
+      const rect = windDial.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const dx = e.clientX - centerX;
+      const dy = e.clientY - centerY;
+      
+      let MathAngle = Math.atan2(dy, dx) * 180 / Math.PI; 
+      let visualAngle = MathAngle + 90; 
+      if (visualAngle < 0) visualAngle += 360;
+      
+      const roundedAngle = Math.round(visualAngle);
+      
+      windDialRotator.style.transform = `rotate(${roundedAngle}deg)`;
+      windDirSlider.value = roundedAngle;
+      
+      updatePhysics();
     };
 
-    gravSlider.oninput = updatePhysics;
-    dragSlider.oninput = updatePhysics;
-    windSlider.oninput = updatePhysics;
+    windDial.addEventListener("pointerdown", (e) => {
+      isDraggingDial = true;
+      windDial.setPointerCapture(e.pointerId);
+      updateWindDial(e);
+      e.preventDefault();
+    });
+
+    windDial.addEventListener("pointermove", (e) => {
+      if (isDraggingDial) {
+        updateWindDial(e);
+      }
+    });
+
+    windDial.addEventListener("pointerup", (e) => {
+      isDraggingDial = false;
+      windDial.releasePointerCapture(e.pointerId);
+    });
   },
 };
 
@@ -294,6 +374,7 @@ async function init() {
   // Initializations from modules
   setupUIHandlers(globals);
   initAudioLipsync(globals);
+  globals.setupPhysicsUI();
 
   globals.vrmControl = new VRMControl(globals);
 
@@ -353,6 +434,10 @@ function animate() {
       }
     }
     if (globals.vrmControl) globals.vrmControl.update();
+    
+    // Apply dynamic wind physics right before VRM processes its internal physics step
+    if (globals.updateSpringBones) globals.updateSpringBones(performance.now() / 1000);
+    
     globals.currentVRM.update(delta);
     updateAudioLipsync(globals.currentVRM, globals);
     if (globals.autoBlink) globals.autoBlink.update(delta);

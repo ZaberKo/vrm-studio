@@ -86,11 +86,11 @@ export function setupUIHandlers(globals) {
       const url = URL.createObjectURL(file);
       const ext = file.name.split(".").pop().toLowerCase();
 
-      if (ext === "vrm") {
+      if (ext === "vrm" || ext === "glb" || ext === "gltf") {
         import("./vrm_loader.js").then((m) =>
           m.loadVRM(url, globals.scene, globals).finally(() => URL.revokeObjectURL(url)),
         );
-      } else if (ext === "vrma" || ext === "glb" || ext === "gltf") {
+      } else if (ext === "vrma") {
         import("./vrm_loader.js").then((m) => 
           m.loadVRMA(url, globals).finally(() => URL.revokeObjectURL(url))
         );
@@ -125,13 +125,17 @@ export function setupUIHandlers(globals) {
   document.getElementById("file-input").onchange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // Clear the input value so the same file can be selected again
+    e.target.value = "";
+
     const url = URL.createObjectURL(file);
     const ext = file.name.split(".").pop().toLowerCase();
-    if (ext === "vrm")
+    if (ext === "vrm" || ext === "glb" || ext === "gltf")
       import("./vrm_loader.js").then((m) =>
         m.loadVRM(url, globals.scene, globals, file.name).finally(() => URL.revokeObjectURL(url)),
       );
-    else if (ext === "vrma" || ext === "glb" || ext === "gltf")
+    else if (ext === "vrma")
       import("./vrm_loader.js").then((m) => 
         m.loadVRMA(url, globals).finally(() => URL.revokeObjectURL(url))
       );

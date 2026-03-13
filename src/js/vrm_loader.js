@@ -169,7 +169,7 @@ export async function loadVRM(url, scene, globals, filename = null) {
     globals.updateExpressions(vrm);
     globals.updateMetadata(vrm.meta);
     globals.updateHierarchy(vrm.scene);
-    globals.initPhysics(vrm);
+    if (globals.applyPhysics) globals.applyPhysics();
     globals.log(`Model Ready: ${vrm.meta?.name || "Unknown"}`, "green");
 
     // Setup autoblink

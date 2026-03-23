@@ -106,21 +106,88 @@ export function setupUIHandlers(globals) {
     document.getElementById("file-input").click();
 
   document.getElementById("download-vrm-btn").onclick = () => {
-    if (!globals.lastMigratedBuffer) return;
+    if (!globals.currentModelBuffer) {
+        globals.log("No model loaded to export", "yellow");
+        return;
+    }
 
-    const blob = new Blob([globals.lastMigratedBuffer], {
+    const arrayBuffer = globals.currentModelBuffer;
+    const dataView = new DataView(arrayBuffer);
+    
+    let jsonChunkLength = dataView.getUint32(12, true);
+    let jsonChunkType = dataView.getUint32(16, true);
+    
+    if (jsonChunkType !== 0x4E4F534A) {
+        globals.log("Not a valid GLB chunk", "red");
+        return;
+    }
+
+    const jsonChunkOffset = 20;
+    const jsonBuffer = new Uint8Array(arrayBuffer, jsonChunkOffset, jsonChunkLength);
+    const textDecoder = new TextDecoder('utf-8');
+    const jsonString = textDecoder.decode(jsonBuffer);
+    let json;
+    try {
+        json = JSON.parse(jsonString);
+    } catch (e) {
+        globals.log("Failed to parse GLB JSON", "red");
+        return;
+    }
+
+    // Replace metadata in VRMC_vrm
+    if (json.extensions && json.extensions.VRMC_vrm && globals.currentMeta) {
+        // Keep the old thumbnail image index if present
+        const oldThumbnail = json.extensions.VRMC_vrm.meta?.thumbnailImage;
+        json.extensions.VRMC_vrm.meta = { ...globals.currentMeta };
+        if (oldThumbnail !== undefined) {
+            json.extensions.VRMC_vrm.meta.thumbnailImage = oldThumbnail;
+        }
+    }
+
+    const textEncoder = new TextEncoder();
+    const newJsonString = JSON.stringify(json);
+    let newJsonBuffer = textEncoder.encode(newJsonString);
+
+    const paddingLength = (4 - (newJsonBuffer.length % 4)) % 4;
+    if (paddingLength > 0) {
+        const paddedBuffer = new Uint8Array(newJsonBuffer.length + paddingLength);
+        paddedBuffer.set(newJsonBuffer);
+        for (let i = 0; i < paddingLength; i++) paddedBuffer[newJsonBuffer.length + i] = 0x20;
+        newJsonBuffer = paddedBuffer;
+    }
+
+    const newJsonChunkLength = newJsonBuffer.length;
+    const chunkLengthDiff = newJsonChunkLength - jsonChunkLength;
+    
+    const newArrayBuffer = new ArrayBuffer(arrayBuffer.byteLength + chunkLengthDiff);
+    const newDataView = new DataView(newArrayBuffer);
+    const newUint8Array = new Uint8Array(newArrayBuffer);
+    const oldUint8Array = new Uint8Array(arrayBuffer);
+
+    // Header
+    newUint8Array.set(oldUint8Array.subarray(0, 20), 0);
+    newDataView.setUint32(8, arrayBuffer.byteLength + chunkLengthDiff, true);
+    
+    // JSON Chunk
+    newDataView.setUint32(12, newJsonChunkLength, true);
+    newUint8Array.set(newJsonBuffer, 20);
+    
+    // Binary Chunk...
+    newUint8Array.set(oldUint8Array.subarray(20 + jsonChunkLength), 20 + newJsonChunkLength);
+
+    const blob = new Blob([newArrayBuffer], {
       type: "application/octet-stream",
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = globals.lastMigratedName || "migrated_v1.vrm";
+    a.download = globals.exportFileName || "model.vrm";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    globals.log("Downloaded migrated VRM 1.0 file", "green");
+    globals.log("Exported VRM file with updated metadata", "green");
   };
   document.getElementById("file-input").onchange = (e) => {
     const file = e.target.files[0];

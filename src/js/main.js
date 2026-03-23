@@ -86,27 +86,79 @@ const globals = {
     const container = document.getElementById("meta-container");
     if (!meta) return;
 
-    const renderValue = (v) => {
-      if (v === null || v === undefined || v === "") return "-";
-      if (Array.isArray(v)) return v.join(", ");
-      if (typeof v === "object") return JSON.stringify(v);
-      return String(v);
-    };
+    // Store state in globals, excluding complex objects like thumbnailImage
+    globals.currentMeta = { ...meta };
+    delete globals.currentMeta.thumbnailImage;
 
-    const data = Object.entries(meta).map(([k, v]) => {
-      return { k: k, v: renderValue(v) };
-    });
+    const fields = [
+      { key: "name", label: "Name", type: "text" },
+      { key: "version", label: "Version", type: "text" },
+      { key: "authors", label: "Authors (comma separated)", type: "text" },
+      { key: "copyrightInformation", label: "Copyright", type: "text" },
+      { key: "contactInformation", label: "Contact", type: "text" },
+      { key: "references", label: "References (comma separated)", type: "text" },
+      { key: "thirdPartyLicenses", label: "Third Party Licenses", type: "text" },
+      { key: "licenseUrl", label: "License URL", type: "text" },
+      { key: "otherLicenseUrl", label: "Other License URL", type: "text" },
+      { key: "commercialUsage", label: "Commercial Usage", type: "select", options: ["personalNonProfit", "personalProfit", "corporation"] },
+      { key: "creditNotation", label: "Credit Notation", type: "select", options: ["required", "unnecessary"] },
+      { key: "modification", label: "Modification", type: "select", options: ["prohibited", "allowModification", "allowModificationRedistribution"] },
+      { key: "avatarPermission", label: "Avatar Permission", type: "select", options: ["onlyAuthor", "onlySeparatelyLicensedPerson", "everyone"] },
+      { key: "allowRedistribution", label: "Allow Redistribution", type: "checkbox" },
+      { key: "allowExcessivelyViolentUsage", label: "Allow Violent Usage", type: "checkbox" },
+      { key: "allowExcessivelySexualUsage", label: "Allow Sexual Usage", type: "checkbox" },
+      { key: "allowPoliticalOrReligiousUsage", label: "Allow Political/Religious Usage", type: "checkbox" },
+      { key: "allowAntisocialOrHateUsage", label: "Allow Antisocial/Hate Usage", type: "checkbox" }
+    ];
 
-    container.innerHTML = data
-      .map(
-        (i) => `
-   <div class="flex flex-col border-b border-white/5 pb-1 gap-1 mt-1">
-    <span class="text-zinc-500 font-bold shrink-0 text-[10px] capitalize">${i.k}</span>
-    <span class="text-zinc-300 font-medium break-all text-[11px]" title='${i.v.replace(/'/g, "&#39;")}'>${i.v}</span>
-   </div>
-  `,
-      )
+    container.innerHTML = fields
+      .map((f) => {
+        let val = globals.currentMeta[f.key];
+        if (f.key === "authors" || f.key === "references") {
+            val = Array.isArray(val) ? val.join(", ") : (val || "");
+        } else if (val === null || val === undefined) {
+            val = "";
+        }
+
+        let inputHtml = "";
+        if (f.type === "text") {
+            inputHtml = `<input type="text" data-key="${f.key}" value="${val.replace(/"/g, '&quot;')}" class="w-full bg-slate-100 dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded px-1 py-0.5 mt-0.5 text-zinc-700 dark:text-zinc-200 focus:outline-blue-500 text-[11px]">`;
+        } else if (f.type === "select") {
+            inputHtml = `<select data-key="${f.key}" class="w-full bg-slate-100 dark:bg-zinc-800 border border-black/10 dark:border-white/10 rounded px-1 py-0.5 mt-0.5 text-zinc-700 dark:text-zinc-200 focus:outline-blue-500 text-[11px]">
+                ${f.options.map(opt => `<option value="${opt}" ${opt === val ? "selected" : ""}>${opt}</option>`).join("")}
+            </select>`;
+        } else if (f.type === "checkbox") {
+            inputHtml = `<label class="flex items-center gap-2 mt-0.5 text-zinc-300 text-[11px]">
+                <input type="checkbox" data-key="${f.key}" ${val ? "checked" : ""} class="accent-blue-500 rounded cursor-pointer">
+                <span>Enable</span>
+            </label>`;
+        }
+
+        return `
+         <div class="flex flex-col border-b border-white/5 pb-2 gap-1 mt-2">
+          <span class="text-zinc-500 font-bold shrink-0 text-[10px] capitalize">${f.label}</span>
+          ${inputHtml}
+         </div>
+        `;
+      })
       .join("");
+
+    container.querySelectorAll("input, select").forEach(el => {
+        el.addEventListener("change", (e) => {
+            const key = e.target.dataset.key;
+            if (e.target.type === "checkbox") {
+                globals.currentMeta[key] = e.target.checked;
+            } else {
+                const val = e.target.value;
+                if (key === "authors" || key === "references") {
+                    globals.currentMeta[key] = val.split(",").map(s => s.trim()).filter(s => s);
+                } else {
+                    globals.currentMeta[key] = val;
+                }
+            }
+            globals.log("Metadata updated: " + key, "gray");
+        });
+    });
   },
 
   updateHierarchy: function (root) {

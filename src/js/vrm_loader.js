@@ -60,18 +60,19 @@ export async function loadVRM(url, scene, globals, filename = null) {
       loadingText.innerText = "CONVERTING VRM 0.0 TO 1.0...";
     });
 
-    // Cache the migrated buffer for download if it was converted
-    const downloadBtn = document.getElementById("download-vrm-btn");
-    globals.lastMigratedBuffer = migrated ? migratedBuffer : null;
+    // Cache the migrated buffer for download
+    globals.currentModelBuffer = migratedBuffer;
     
     // Derive name: prioritize passed filename, then URL, fallback to default
     const originalName = filename || (url.includes('blob:') ? 'model.vrm' : url.split('/').pop());
-    globals.lastMigratedName = migrated ? originalName.replace('.vrm', '_v1.vrm') : null;
+    const isVrmExtension = originalName.toLowerCase().endsWith('.vrm');
+    globals.exportFileName = (isVrmExtension && migrated) 
+        ? originalName.replace(/(\.vrm)$/i, '_v1.vrm') 
+        : (isVrmExtension ? originalName : 'model.vrm');
     
-    if (migrated && downloadBtn) {
+    const downloadBtn = document.getElementById("download-vrm-btn");
+    if (downloadBtn) {
        downloadBtn.classList.remove("hidden");
-    } else if (downloadBtn) {
-       downloadBtn.classList.add("hidden");
     }
 
     loadingText.innerText = "PARSING MODEL...";

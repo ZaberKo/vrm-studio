@@ -335,28 +335,84 @@ export async function migrateVRM(arrayBuffer, onMigrate) {
       contactInformation: vrm0.meta.contactInformation || "",
       references: vrm0.meta.reference ? [vrm0.meta.reference] : [],
       commercialUsage: vrm0.meta.commercialUssageName === "Allow" ? "personalProfit" : "personalNonProfit", 
-      creditNotation: vrm0.meta.creditNaming === "Unnecessary" ? "unnecessary" : "required",
-      modification: vrm0.meta.modificationName === "Allow" ? "allowModification" : "prohibited",
-      avatarPermission: "everyone",
+      creditNotation: "required",
+      modification: "prohibited",
+      allowRedistribution: false,
+      avatarPermission: "onlyAuthor",
       allowExcessivelyViolentUsage: vrm0.meta.violentUssageName === "Allow",
       allowExcessivelySexualUsage: vrm0.meta.sexualUssageName === "Allow",
       allowPoliticalOrReligiousUsage: false,
       allowAntisocialOrHateUsage: false,
       licenseUrl: "https://vrm.dev/licenses/1.0/"
     };
-    
-    if (vrm0.meta.otherLicenseUrl) {
-        vrm1.meta.otherLicenseUrl = vrm0.meta.otherLicenseUrl;
-    }
 
-    if (vrm0.meta.otherPermissionUrl) {
-        vrm1.meta.thirdPartyLicenses = vrm0.meta.otherPermissionUrl;
-    }
-    
     if (vrm0.meta.allowedUserName === "OnlyAuthor") {
       vrm1.meta.avatarPermission = "onlyAuthor";
     } else if (vrm0.meta.allowedUserName === "ExplicitlyLicensedPerson") {
       vrm1.meta.avatarPermission = "onlySeparatelyLicensedPerson";
+    } else if (vrm0.meta.allowedUserName === "Everyone") {
+      vrm1.meta.avatarPermission = "everyone";
+    }
+
+    if (vrm0.meta.licenseName) {
+      switch (vrm0.meta.licenseName) {
+          case "Redistribution_Prohibited":
+              vrm1.meta.allowRedistribution = false;
+              vrm1.meta.modification = "prohibited";
+              break;
+          case "CC0":
+              vrm1.meta.allowRedistribution = true;
+              vrm1.meta.modification = "allowModificationRedistribution";
+              vrm1.meta.creditNotation = "unnecessary";
+              break;
+          case "CC_BY":
+              vrm1.meta.allowRedistribution = true;
+              vrm1.meta.modification = "allowModificationRedistribution";
+              vrm1.meta.creditNotation = "required";
+              break;
+          case "CC_BY_NC":
+              vrm1.meta.allowRedistribution = true;
+              vrm1.meta.modification = "allowModificationRedistribution";
+              vrm1.meta.creditNotation = "required";
+              vrm1.meta.commercialUsage = "personalNonProfit";
+              break;
+          case "CC_BY_SA":
+              vrm1.meta.allowRedistribution = true;
+              vrm1.meta.modification = "allowModificationRedistribution";
+              vrm1.meta.creditNotation = "required";
+              break;
+          case "CC_BY_NC_SA":
+              vrm1.meta.allowRedistribution = true;
+              vrm1.meta.modification = "allowModificationRedistribution";
+              vrm1.meta.creditNotation = "required";
+              vrm1.meta.commercialUsage = "personalNonProfit";
+              break;
+          case "CC_BY_ND":
+              vrm1.meta.allowRedistribution = true;
+              vrm1.meta.modification = "prohibited";
+              vrm1.meta.creditNotation = "required";
+              break;
+          case "CC_BY_NC_ND":
+              vrm1.meta.allowRedistribution = true;
+              vrm1.meta.modification = "prohibited";
+              vrm1.meta.creditNotation = "required";
+              vrm1.meta.commercialUsage = "personalNonProfit";
+              break;
+      }
+    }
+    
+    let otherLicenseUrl = vrm0.meta.otherLicenseUrl;
+    let otherPermissionUrl = vrm0.meta.otherPermissionUrl;
+    if (otherLicenseUrl && otherPermissionUrl) {
+      if (otherLicenseUrl === otherPermissionUrl) {
+        vrm1.meta.otherLicenseUrl = otherLicenseUrl;
+      } else {
+        vrm1.meta.otherLicenseUrl = `${otherLicenseUrl}\n${otherPermissionUrl}`;
+      }
+    } else if (otherLicenseUrl) {
+      vrm1.meta.otherLicenseUrl = otherLicenseUrl;
+    } else if (otherPermissionUrl) {
+      vrm1.meta.otherLicenseUrl = otherPermissionUrl;
     }
 
     if (vrm0.meta.texture !== undefined && json.textures && json.textures[vrm0.meta.texture]) {
